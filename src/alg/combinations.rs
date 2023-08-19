@@ -2,12 +2,12 @@ use num_bigint::BigUint;
 use num_traits::One;
 
 const CACHE_SIZE: usize = u16::MAX as usize;
-struct Combinations {
+pub(crate) struct Combinations {
     cache: [u64; CACHE_SIZE]
 }
 
 impl Combinations {
-    fn new() -> Self { Self { cache: [0; CACHE_SIZE] } }
+    pub(crate) fn new() -> Self { Self { cache: [0; CACHE_SIZE] } }
 
     // - TODO: get rid of mut.
     fn combinations(&mut self, n: u8, k: u8) -> u64 {
@@ -38,7 +38,8 @@ impl Combinations {
     /// 
     /// # Discussion
     /// `pool_sz` and `draw_sz` are essentially the coordinates of the number of $C^{n}_{k}$
-    fn unrank(&mut self, rank: u64, pool_sz: u8, draw_sz: u8) -> Vec<u8> {
+    /// Indicies of elements in pool start w. 1.
+    pub(crate) fn unrank(&mut self, rank: u64, pool_sz: u8, draw_sz: u8) -> Vec<u8> {
         let mut c: Vec<u8> = Vec::new();
         let mut r = rank;
         let mut j: u8 = 0;
@@ -65,6 +66,25 @@ impl Combinations {
         }
 
         return c;
+    }
+
+    /// Smallest rank is 1.
+    pub(crate) fn rank(&mut self, combination: &Vec<u8>, pool_sz: u8, draw_sz: u8) -> u64 {
+        let k = combination.len() as u8;
+        let n = pool_sz;
+
+        // there is a total of this many combinations
+        let mut result = self.combinations(pool_sz,draw_sz);
+
+        // - TODO: don't clone.
+        let mut combination = combination.clone();
+        combination.sort();
+
+        for i in 0..combination.len() {
+            result -= self.combinations(n - combination[i], k - (i as u8));
+        }
+
+        result
     }
 
     fn key(n: u8, k: u8) -> usize {
@@ -180,7 +200,7 @@ mod tests {
     }
 
     #[test]
-    fn test_unrank_correct() {
+    fn test_unrank() {
         let mut combinations = Combinations::new();
         let mut combo = combinations.unrank(4, 4, 3);
 
@@ -190,4 +210,16 @@ mod tests {
         combo = combinations.unrank(8, 5, 3);
         assert_eq!(combo, vec![2,3,5]);
     }
+
+    #[test]
+    fn test_rank() {
+        let mut combinations = Combinations::new();
+        let rank = combinations.rank(&vec![2,3,5], 5, 3);
+
+        assert_eq!(rank, 8);
+
+        let rank = combinations.rank(&vec![2,3,4], 4, 3);
+        assert_eq!(rank, 4);
+    }
+
 }
