@@ -54,6 +54,8 @@ impl CombinatoricsOps for u8 {
         if *self == 0 { return One::one(); }
         let mut result: BigUint = One::one();
 
+        // There is a more effective version of this.
+        // But frankly, adding another cache would be a much better optimization.
         for idx in 1..=*self {
             result *= idx;
         }

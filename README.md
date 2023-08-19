@@ -1,8 +1,21 @@
 # sizzling1
-A really recherche way to heat up your digs with your PC. Also generates tons of quirky images.
+Generates a fairly infinite collection of images, and tries to look for the good ones. A partial implementation of fractal flames algorithm (FLAM3 by S. Draves).
 
-## Intro.
-This is a project about fractal flames. Fractal flames is an algorithm (of sorts), which aims to generate aesthetically pleasing images, using a combination of math and balderdash. 
+## Note
+This is a learning project. I use it to learn Rust, hence there are a lot of comments explaining how something works and how I don't know why something works. Additionally there is a lot of seemingly needless code, which was written just for demonstration of some concept, idea, or approach.
+
+## Current state of the project
+Currently the project doesn't have the core functionality implemented. Initially I focused on implementing adaptive kernel density estimation, since I really wanted to see if it's gonna be any improvement over the  naive histogram-based estimation. It kinda is, however I think the whole idea of KDE is nipped in the bud by the fact that there are only so many pixels on the screen.
+The complete core functionality would include:
+1. The "search mode" - running in this mode, the algorithm will sift through all of the possible images, searching for those satisfying some criterion. The density criterion for now seems like a good choice - it's always nice to have a lot of non-zero pixels in the image. Additionally it would probably be nice to have some ML gizmo here - the balderdash part of the FLAM3 seems to be quite fitting for these undisciplined algorithms. 
+2. The "hi-def render mode" - will allow to render the selected fractal in high def (the search mode will save only thumbnails). Interestingly enough, any image can be described by the two numbers - the index of a combination out of all the combinations which can be drawn from the set of all possible mutators, and the index out of the set of all possible affine transforms. In this project these sets are of fixed size, with a fixed order.
+3. Utilizing all the cores, to achieve max heat output possible.
+
+ To expand on the point in (2), consider the following simple idea: the number of all the combinations of the set of size $n$ is: $\sum_{k=1}^{n} C^{n}_{k} = 2^n-1$, where $C^{n}_{k} = \frac{n!}{(n-k)!k!}$ - a number of different ways of selecting $k$ elements from a pool of $n$, where different orderings of the same $k$ elements are considered the same (hence division by $k!$ - the number of different ways to order $k$ elements). Now, we have two sets: a set of mutators (see the FLAM3 algorithm intro below), and a set of affine transforms. Let's consider a set of mutators (the approach for the set of affine transforms will be the same): let's say we have 47 mutators, which yields a total of $2^{47}-1$ different combinations, then to define which mutators we want to select, we only need to specify and unrank the index of the combination, out of $2^{47}-1$ possible combinations.
+
+
+## Freestyle Rundown of FLAM3 Algorithm.
+FLAM3 is a generative art algorithm, which aims to produce aesthetically pleasing images, using a combination of math and balderdash. 
 The math part is a result from the work of Barnsley et. al. on the subject of fractal geometry, called "Chaos Game Algorithm". As a matter of fact, "Chaos Game Algorithm" is a randomized version of something deterministic, which we better start with. Imagine you want to draw a Sierpinski triangle (because lots of nice things, like Star Destroyers and neatly cut watermelons are triangular). Sierpinski triangle is a fractal (which means that it's a quirky, self-similar set), which can be described as a **limit** of iteratively applying the following steps to "something on a plane":
 
 1. Make it twice as small.
@@ -18,7 +31,7 @@ On each step this algorithm triples its input - meaning that on each iteration t
 
 So, enter the "chaotic" version of this process. The "chaotic" version just says:
 1. Take a point on a plane.
-2. Randomly select a transformation (i.e. for Sierpinski triangle the choice is between "make it twice as and move to the side / move up / don't move")
+2. Randomly select a transformation (i.e. for Sierpinski triangle the choice is between "make it twice as small and move to the side / move up / don't move")
 3. Apply it to a point. Mark a location on plane where point landed after being "transformed".
 4. Repeat 1-3 like a million times, still **much** less computation than in the deterministic version.
 
@@ -38,16 +51,3 @@ Contractivess is a necessary property that a transform should posses, if the cha
 4. Rinse and repeat like a million times. Maybe you'll get a lost Picasso, maybe a black screen (a lost Malevich that is).
 
 Now, with a decent number of different mutators there is a huge space of possible images to explore, even for one regular IFS, by going through all of the possible combinations of these mutators. Also, there is a huge number of nice IFS that can be constructed from sampling affine transforms from a bunch of preset IFS (the IFSes for some well known fractals like Sierpinski triangle, Barnsley fern, Ice crystal and so on). Multiply these two numbers together and the result will be beyond any reasonable comprehension - in a way it would be poetic.
-
-## Current state of the project
-Currently the project doesn't have the core functionality implemented. Initially I focused on implementing adaptive kernel density estimation algorithm, since I really wanted to see if it's gonna be any improvement over the  naive histogram-based estimation. It kinda is, however I think the whole idea of KDE is nipped in the bud by the fact that there are only so many pixels on the screen.
-The complete core functionality would include:
-1. The "search mode" - running in this mode, the algorithm will sift through the possible images searching for those satisfying some criterion. The density criterion for now seems like a good choice - it's always nice to have a lot of non-zero pixels in the image. Additionally it'd probably be nice to have some ML gizmo here - the balderdash part of the fractal flames seems to be quite fitting to these undisciplined algorithms. 
-2. The "hi-def render mode" - will allow to render the selected fractal in high def (the search mode will save only thumbnails). Interestingly enough, any image can be described by the two numbers - the index of the permutation of all the permutations out of the set of all possible mutators, and out of the set of all possible affine transforms. In this project these sets are of fixed size, with a fixed order.
-3. Utilizing all the cores, to achieve max heat output possible.
-
-## Note
-This is a learning project. I use it to learn Rust, hence there are a lot of comments explaining how something works and how I don't know why something works. Additionally there is a lot of seemingly needless code, which was written just to demonstrate some concept.
-
-## Why is it considered a "way to heat up your digs"?
-I spent quite some time dwelling on the fractal flames algorithm / fractal art. On the one hand it's an incredibly interesting area, which requires a lot of research, and implementing a lot of inherently non-trivial, refreshing things. It's a nice brain-teaser. On the other hand - it's a completely unmanageable, non-deterministic mess, which **might** produce something decent-looking, but not in any way worth the electric bill it'll most probably incur. So, I feel pretty frustrated with this project and at the same time fairly motivated by it, and to resolve the frustration I turned it into a sort of joke. Also, living without central heating I can attest that it does indeed make a room warmer.
