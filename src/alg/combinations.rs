@@ -30,6 +30,43 @@ impl Combinations {
         combs
     }
 
+    /// Returns a combination, using its lexicographical rank.
+    /// # Arguments
+    /// * `rank` - doi, rank.
+    /// * `pool_sz` - how many element  are in the pool.
+    /// * `draw_sz` - how many are we drawing.
+    /// 
+    /// # Discussion
+    /// `pool_sz` and `draw_sz` are essentially the coordinates of the number of $C^{n}_{k}$
+    fn unrank(&mut self, rank: u64, pool_sz: u8, draw_sz: u8) -> Vec<u8> {
+        let mut c: Vec<u8> = Vec::new();
+        let mut r = rank;
+        let mut j: u8 = 0;
+
+        for s in 1..=draw_sz {
+            let mut cs = j + 1;
+
+            if pool_sz < cs {
+                return Vec::new();
+            }
+
+            while r > self.combinations(pool_sz - cs, draw_sz - s) {
+                if pool_sz < cs {
+                    return Vec::new();
+                }
+
+                r -= self.combinations(pool_sz - cs, draw_sz - s);
+                cs += 1;
+            }
+
+            c.push(cs);
+            j = cs;
+
+        }
+
+        return c;
+    }
+
     fn key(n: u8, k: u8) -> usize {
         let n = n as u16;
         let k = k as u16;
@@ -140,5 +177,17 @@ mod tests {
         let all_combinations: Vec<u64> = (1..=49).map(|elem| { combinations.combinations(49, elem) }).collect();
 
         assert_eq!(reference, all_combinations);
+    }
+
+    #[test]
+    fn test_unrank_correct() {
+        let mut combinations = Combinations::new();
+        let mut combo = combinations.unrank(4, 4, 3);
+
+        assert_eq!(combo, vec![2,3,4]);
+
+        // good nuff
+        combo = combinations.unrank(8, 5, 3);
+        assert_eq!(combo, vec![2,3,5]);
     }
 }
