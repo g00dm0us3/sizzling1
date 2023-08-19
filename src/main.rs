@@ -6,6 +6,7 @@ mod util;
 mod ds;
 mod frac_render;
 mod mutators;
+mod randomness;
 
 use std::time::Instant;
 
@@ -17,7 +18,7 @@ use chaos_game::ChaosGame;
 use crate::{frac_render::RgbRenderer, ds::array_2d::Index2D};
 
 // grids, which are too small don't yield detailed results (all samples endup in the same bins)
-// - TODO: qaud-tree to grid?
+// - TODO: quad-tree to grid?
 // - TODO: supersampling should probably be a thing.
 fn main() {
     // - TODO: erase before commit.

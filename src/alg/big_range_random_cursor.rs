@@ -1,27 +1,38 @@
 use std::{collections::HashMap, ops::RangeInclusive};
+use crate::randomness;
 // - TODO: integrate w. range inclusive.
 // - TODO: should be serializable.
 
 /// Goes through a big range (max from 0 to 2^64 - 1), at random
 /// without repetition.
-pub(crate) struct BigRangeRandomIterator {
+pub(crate) struct BigRangeRandomCursor {
     lower_bound: u64,
     upper_bound: u64,
     generated_count: u64,
     hashmap: HashMap<u64, u64>
 }
 
-impl BigRangeRandomIterator {
+impl BigRangeRandomCursor {
     pub(crate) fn new(range: RangeInclusive<u64>, preexisting: &[u64]) -> Self {
         let mut this = Self { lower_bound: *range.start(), upper_bound: *range.end(), generated_count: 0, hashmap: HashMap::new() };
 
         assert!(preexisting.len() < 100);
-        preexisting.into_iter().for_each(|val| { this.next(*val); });
+        preexisting.into_iter().for_each(|val| { this.next_(*val); });
 
         this
     }
 
-    fn next(&mut self, rng_number: u64) -> Option<u64> {
+    pub(crate) fn iter_mut(&mut self) -> IterMut {
+        return IterMut { cursor: self }
+    }
+
+    fn next(&mut self) -> Option<u64> {
+
+        // - TODO: use frand here
+        self.next_(7)
+    }
+
+    fn next_(&mut self, rng_number: u64) -> Option<u64> {
         if self.lower_bound > self.upper_bound {
             return None;
         }
@@ -30,9 +41,9 @@ impl BigRangeRandomIterator {
 
         let result: u64;
 
-        if let saved = self.hashmap[&r] {
+        if let Some(saved) = self.hashmap.get(&r) {
             // this is actually some min, which hasn't been yet returned.
-            result = saved;
+            result = *saved;
         } else {
             result = r;
         }
@@ -67,4 +78,15 @@ impl BigRangeRandomIterator {
     }
 }
 
-// - TODO: impl. mut iter.
+pub(crate) struct IterMut<'a> {
+    cursor: &'a mut BigRangeRandomCursor
+}
+
+// implicit elided lifetime. are we good here?
+impl Iterator for IterMut<'_> {
+    type Item = u64;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.cursor.next()
+    }
+}
