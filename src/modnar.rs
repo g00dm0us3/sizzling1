@@ -7,27 +7,17 @@ pub(crate) struct Modnar {
 }
 
 impl Modnar {
-    pub(crate) fn new_lsfr() -> Self {
-        Self { seed: 0, generator: lsfr_ }
+    pub(crate) fn new_lsfr(seed: u64) -> Self {
+        Self { seed: seed, generator: lsfr_ }
     }
 
     pub(crate) fn new_rng() -> Self {
-        fn mix2_64(x: u64, y: u64) -> u64 {
-            x.wrapping_add(y) ^ y << 10
-        }
-        fn hash_time() -> u64 {
-            let duration = std::time::SystemTime::UNIX_EPOCH
-                .elapsed()
-                .expect("Failed to get current time");
-            mix2_64(duration.as_secs(), duration.subsec_nanos() as u64)
-        }
-
-        Self { seed: hash_time(), generator: rng_}
+        Self { seed: random_seed_(), generator: rng_}
     }
 
     pub(crate) fn gen(&mut self, range: RangeInclusive<u64>) -> u64 {
         fn remap_u64(val: u64, new_range: RangeInclusive<u64>) -> u64 {
-            (((val as f32) * ((new_range.len() / u64::MAX) as f32)).round() as u64) + new_range.start() 
+            (((val as f32) * ((new_range.len() as f32 / u64::MAX as f32) )).round() as u64) + new_range.start() 
         }
 
         let val = (self.generator)(self);
@@ -42,6 +32,20 @@ fn lsfr_(r: &mut Modnar) -> u64 {
 
 fn rng_(r: &mut Modnar) -> u64 {
     todo!()
+}
+
+fn random_seed_() -> u64 {
+    fn mix2_64(x: u64, y: u64) -> u64 {
+        x.wrapping_add(y) ^ y << 10
+    }
+    fn hash_time() -> u64 {
+        let duration = std::time::SystemTime::UNIX_EPOCH
+            .elapsed()
+            .expect("Failed to get current time");
+        mix2_64(duration.as_secs(), duration.subsec_nanos() as u64)
+    }
+
+    hash_time()
 }
 
 // LSFR byte feedback
@@ -111,3 +115,35 @@ const BYTE_FEEDBACK: [u64; 256] = [
     0xe800000000000008, 0x2f00000000000003, 0x6600000000000005, 0xa10000000000000e,
     0xf400000000000009, 0x3300000000000002, 0x7a00000000000004, 0xbd0000000000000f,
   ];
+
+  #[cfg(test)]
+  mod tests {
+    use super::{Modnar, random_seed_};
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_lsfr() {
+        for _ in 0..100 {
+            let mut map = HashMap::<u64, u32>::new();
+            let mut lsfr = Modnar::new_lsfr(random_seed_());
+
+            for _ in 0..100 {
+                let val = lsfr.gen(0..=(1 << 50));
+                if let Some(count) = map.get(&val) {
+                    map.insert(val, *count + 1);
+                } else {
+                    map.insert(val, 1);
+                }
+            }
+
+            // - todo: check here(curvy shit).
+            // LSFR gives uniformly distributed vals 0..2^64 - 1.
+            // Making it narrower, means same vals will end up in the same bucket.
+            // Bucket width is the 2^64 / (input range).
+            // 1..10 -> 1..5
+            // 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10
+            //   1 |   2   |   3   |   4   |   5   | 
+            // Now why do we need lsfr?
+        }
+    }
+  }
