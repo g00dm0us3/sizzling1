@@ -1,5 +1,5 @@
 use std::{collections::HashMap, ops::RangeInclusive};
-use crate::randomness;
+use crate::modnar;
 // - TODO: integrate w. range inclusive.
 // - TODO: should be serializable.
 
@@ -14,8 +14,14 @@ pub(crate) struct BigRangeRandomCursor {
 
 impl BigRangeRandomCursor {
     pub(crate) fn new(range: RangeInclusive<u64>, preexisting: &[u64]) -> Self {
-        let mut this = Self { lower_bound: *range.start(), upper_bound: *range.end(), generated_count: 0, hashmap: HashMap::new() };
+        let mut this = Self { 
+            lower_bound: *range.start(),
+            upper_bound: *range.end(),
+            generated_count: 0,
+            hashmap: HashMap::new() 
+        };
 
+        // - TODO: move out of constructor.
         assert!(preexisting.len() < 100);
         preexisting.into_iter().for_each(|val| { this.next_(*val); });
 
@@ -53,8 +59,6 @@ impl BigRangeRandomCursor {
 
         // r is going to become some range min.
         // each range min will be returned once
-
-        // [&self.lower_bound]
         if let Some(previous_range_min) = self.hashmap.get(&self.lower_bound) {
             // current lower_bound has already been encountered
             // and returned (it was "r" selected at some point,

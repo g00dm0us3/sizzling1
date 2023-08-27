@@ -6,7 +6,7 @@ mod util;
 mod ds;
 mod frac_render;
 mod mutators;
-mod randomness;
+mod modnar;
 
 use std::time::Instant;
 

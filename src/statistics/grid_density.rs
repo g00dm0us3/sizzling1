@@ -63,7 +63,6 @@ impl DensityEstimator2D {
     }
 
     fn kde<F>(&self, width: usize, height: usize, get_h: F) -> Array2D where F: Fn(&RandomVec2D)->f32 {
-        //let h = h.max(((1 << 16) as f32) * f32::EPSILON); // what des epsilon smell like?
         let mut res = Array2D::new(width, height);
 
         let grid_x_range = 0.0..=((width as f32) - 1.0);
