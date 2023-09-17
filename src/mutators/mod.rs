@@ -1,11 +1,18 @@
 mod mutator_lib;
 
+use std::ops::RangeInclusive;
 use crate::{util::Point, modnar::Modnar};
 use crate::mutators::mutator_lib::{bent, blob, cosine, diamond, disc, ex, exponential, fan, fisheye, handkerchief, heart, horseshoe, hyperbolic, julia, polar, popcorn, power, rings, sinus, spherical, spiral, swirl, waves, pdj, fan2, rings2, eyefish, bubble, cylinder, perspective, noise, julian, julias, blur, gaussian, radian_blur, pie, ngon, curl, rectangles, arch, tangent, square, rays, blade, secant, twintrian, cross};
 
 pub(crate) struct MutatorConfig{
     weight: f32,
     mutator: Mutators
+}
+
+impl MutatorConfig {
+    pub(crate) fn new(weight: f32, mutator: Mutators) -> Self {
+        Self { weight: weight, mutator: mutator }
+    }
 }
 
 pub(crate) fn apply_mutator_combination(
@@ -24,11 +31,14 @@ pub(crate) fn apply_mutator_combination(
     })
 }
 
+
+pub(crate) const ALL_MUTATOR_DISCRIMINANTS: RangeInclusive<u8> = 1..=48;
 // same as [repr(C, u8)], u8 concerns discriminant vals, C concerns size and alignment of params.
 // https://doc.rust-lang.org/reference/type-layout.html
 #[repr(u8)]
 #[derive(Copy, Clone)]
 pub(crate) enum Mutators {
+
     Sinus = 1,
     Spherical = 2,
     Swirl = 3,

@@ -1,13 +1,14 @@
 use num_bigint::BigUint;
 use num_traits::One;
+use std::vec;
 
 const CACHE_SIZE: usize = u16::MAX as usize;
 pub(crate) struct Combinations {
-    cache: [u64; CACHE_SIZE]
+    cache: Vec<u64>
 }
 
 impl Combinations {
-    pub(crate) fn new() -> Self { Self { cache: [0; CACHE_SIZE] } }
+    pub(crate) fn new() -> Self { Self { cache: vec![0; CACHE_SIZE] } }
 
     // - TODO: get rid of mut.
     fn combinations(&mut self, n: u8, k: u8) -> u64 {
@@ -220,6 +221,9 @@ mod tests {
 
         let rank = combinations.rank(&vec![2,3,4], 4, 3);
         assert_eq!(rank, 4);
+
+        let rank = combinations.rank(&vec![27], 48, 1);
+        eprintln!("{:}", rank);
     }
 
 }

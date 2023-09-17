@@ -8,7 +8,53 @@ pub(crate) struct RgbRenderer;
 
 impl RgbRenderer {
     const LUM_LEVELS: usize = 10_000;
-    pub(crate) fn img_bw(array: &Array2D) -> RgbaImage {
+
+    pub(crate) fn img_bw_simple(array: &Array2D) -> RgbaImage {
+        let mut img = RgbaImage::new(array.width() as u32, array.height() as u32);
+
+        let width = array.width();
+        let height = array.height();
+        let log_max = Self::find_log_max(array);
+
+        let mut avg: f32 = 0.0;
+        let mut avg_sq: f32 = 0.0;
+        let mut cnt: f32 = 0.0;
+
+        //let cdf = Self::smoothed_cdf(array, log_max, &alpha_range);
+        for x in 0..width {
+            for y in 0..height {
+                let density_val = array[Index2D::from(x, y)];
+
+                let color = if density_val > f32::EPSILON {
+                    let mut alpha = Self::density_to_alpha(density_val, log_max);
+
+                    cnt += 1.0;
+                    Rgba::from([
+                        (27.0 + 27.0 * alpha).round() as u8,
+                        (127.0 + 127.0 * alpha).round() as u8,
+                        0,
+                        255
+                    ])
+                } else {
+                    Rgba::from([0; 4])
+                };
+
+                img.put_pixel(
+                    (width - 1 - x) as u32,
+                    (height - 1 - y) as u32,
+                    color
+                );
+            }
+        }
+
+        let var = (avg_sq/cnt) -  (avg/cnt).powf(2.0);
+        println!("Avg: {}, Var: {}, STD: {}",  avg / cnt, var, var.abs().sqrt());
+
+        return img;
+    }
+
+    // - TODO: refactor.
+    pub(crate) fn img_bw_(array: &Array2D) -> RgbaImage {
         let mut img = RgbaImage::new(array.width() as u32, array.height() as u32);
 
         let width = array.width();
@@ -39,7 +85,7 @@ impl RgbRenderer {
                     // Histogram equalization
                     alpha = cdf[cdf_bin];
 
-                    // AGCWD
+                    // Huang et. al. "Efficient Contrast Enhancement Using Adaptive Gamma Correction With Weighted Distribution"
                     //alpha = (alpha).powf(1.0 - cdf[cdf_bin]);
                     // Statistics
                     avg += alpha;

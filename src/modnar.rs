@@ -16,17 +16,17 @@ impl Modnar {
     }
 
     pub(crate) fn gen(&mut self, range: RangeInclusive<u64>) -> u64 {
-        fn remap_u64(val: u64, new_range: RangeInclusive<u64>) -> u64 {
-            (((val as f32) * ((new_range.len() as f32 / u64::MAX as f32) )).round() as u64) + new_range.start() 
-        }
-
-        let val = (self.generator)(self);
-        remap_u64(val, range)
+        let val = self.gen_f64();
+        range.start().wrapping_add((range.len() as f64 * val).round() as u64)
     }
 
     pub(crate) fn gen_f32(&mut self) -> f32 {
-        (f64::from_bits(self.gen(0..=u64::MAX) >> 9 | 0x3f800000) - 1.0) as f32 
-    }   
+        self.gen_f64() as f32
+    }
+
+    fn gen_f64(&mut self) -> f64 {
+        f64::from_bits((self.generator)(self) >> 12 | 0x3ff0000000000000) - 1.0
+    }
 }
 
 fn lsfr_(r: &mut Modnar) -> u64 {
@@ -183,4 +183,34 @@ const BYTE_FEEDBACK: [u64; 256] = [
 
         assert!(counter_eq < 10);
     }
+
+  #[test]
+  fn test_rng_f32() {
+      let mut rng1 = Modnar::new_rng();
+      let mut rng2 = Modnar::new_rng();
+
+      let mut vec1 = Vec::<f32>::new();
+      let mut vec2 = Vec::<f32>::new();
+
+      for _ in 0..100 {
+          vec1.push(rng1.gen_f32());
+          vec2.push(rng2.gen_f32());
+      }
+
+      let mut counter_eq = 0;
+      for it in vec1.iter().zip(vec2.iter()) {
+          let (ai, bi) = it;
+          assert!(*ai >= 0.0 && *ai <= 1.0);
+          assert!(*bi >= 0.0 && *bi <= 1.0);
+
+          counter_eq += if *ai == *bi {
+              1
+          } else {
+              0
+          }
+      }
+
+      assert!(counter_eq < 10);
+  }
+
   }

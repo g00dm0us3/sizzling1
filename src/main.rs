@@ -7,6 +7,7 @@ mod ds;
 mod frac_render;
 mod mutators;
 mod modnar;
+mod usecase;
 
 use std::time::Instant;
 
@@ -16,27 +17,39 @@ use statistics::grid_density::DensityEstimator2D;
 use chaos_game::ChaosGame;
 
 use crate::{frac_render::RgbRenderer, ds::array_2d::Index2D};
+use alg::combinations;
+use crate::alg::combinations::Combinations;
+use crate::mutators::{MutatorConfig, Mutators};
+use std::env;
+use std::process::exit;
 
 // grids, which are too small don't yield detailed results (all samples endup in the same bins)
 // - TODO: quad-tree to grid?
 // - TODO: supersampling should probably be a thing.
 fn main() {
+    let args: Vec<String> = env::args().collect();
+
+    if args.len() < 2 {
+        eprintln!("Path to IFS presets not set!");
+        exit(-2);
+    }
+    let ifs_presets_json_path = &args[1];
     // - TODO: erase before commit.
-    let presets = PresetService::load("ifs_presets.json")
-    .expect("DB not found.");
-
+    let presets = PresetService::load(ifs_presets_json_path)
+        .expect("DB not found.");
     let ifs = presets.find_ifs_by("Barnsley fern").expect("Couldn't find Barnsley");
-
-    println!("{:?}", ifs);
+    let mut chaos_game = ChaosGame::new();
 
     let now = Instant::now();
-    let sample = ChaosGame::run_chaos_game(ifs, 100_000_000);
-    //let density = DensityEstimator2D::from(sample.as_slice()).kde_const(1024, 1024, 1.0);
-    //let density = DensityEstimator2D::from(sample.as_slice()).histogram(8024, 8024);
+    let sample = chaos_game.run_chaos_game(
+        ifs,
+        Some(&[MutatorConfig::new(1.0, Mutators::Swirl)]),
+        500_000
+    );
 
-    let density = DensityEstimator2D::from(sample.as_slice()).kde_adapt(8024, 8024);
+    let density = DensityEstimator2D::from(sample.as_slice()).histogram(256, 256);
 
-    let mut integral = 0.0;
+    /*let mut integral = 0.0;
 
     for x in 0..density.width() {
         for y in 0..density.height() {
@@ -45,10 +58,13 @@ fn main() {
     }
 
     println!("PDE Integral = {}, error = {}%", integral, (1.0-integral).abs() * 100.0);
+    */
 
-    let img = RgbRenderer::img_bw(&density);
+    let img = RgbRenderer::img_bw_simple(&density);
 
     let elapsed = now.elapsed();
+
     img.save("Barnsley fern.png").unwrap();
+
     println!("Generated {}x{} image in {} (s)", density.width(), density.height(), elapsed.as_secs_f32());
 }

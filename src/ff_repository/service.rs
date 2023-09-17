@@ -22,7 +22,7 @@ impl Display for PresetServiceError {
 impl Error for PresetServiceError {}
 
 pub(crate) struct PresetService {
-    affine_presets: Vec<AffineIfs>,
+    pub(crate) affine_presets: Vec<AffineIfs>,
 }
 
 impl PresetService {
