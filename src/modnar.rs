@@ -23,6 +23,10 @@ impl Modnar {
         let val = (self.generator)(self);
         remap_u64(val, range)
     }
+
+    pub(crate) fn gen_f32(&mut self) -> f32 {
+        (f64::from_bits(self.gen(0..=u64::MAX) >> 9 | 0x3f800000) - 1.0) as f32 
+    }   
 }
 
 fn lsfr_(r: &mut Modnar) -> u64 {
@@ -30,8 +34,12 @@ fn lsfr_(r: &mut Modnar) -> u64 {
     r.seed as u64
 }
 
-fn rng_(r: &mut Modnar) -> u64 {
-    todo!()
+fn rng_(rng: &mut Modnar) -> u64 {
+    // from rust frand https://github.com/engusmaze/frand/blob/main/src/gen/mod.rs
+    let mut value = rng.seed.wrapping_add(12964901029718341801);
+    rng.seed = value;
+    value = value.wrapping_mul(149988720821803190 ^ value);
+    value ^ value >> 32
 }
 
 fn random_seed_() -> u64 {
@@ -48,7 +56,7 @@ fn random_seed_() -> u64 {
     hash_time()
 }
 
-// LSFR byte feedback
+/// LSFR byte feedback
 const BYTE_FEEDBACK: [u64; 256] = [
     0x0000000000000000, 0xc70000000000000b, 0x8e0000000000000d, 0x4900000000000006,
     0x1c00000000000001, 0xdb0000000000000a, 0x920000000000000c, 0x5500000000000007,
@@ -145,5 +153,34 @@ const BYTE_FEEDBACK: [u64; 256] = [
             //   1 |   2   |   3   |   4   |   5   | 
             // Now why do we need lsfr?
         }
+    }
+
+    #[test]
+    fn test_rng() {
+        let mut rng1 = Modnar::new_rng();
+        let mut rng2 = Modnar::new_rng();
+
+        let mut vec1 = Vec::<u64>::new();
+        let mut vec2 = Vec::<u64>::new();
+
+        for _ in 0..100 {
+            vec1.push(rng1.gen(10..=100));
+            vec2.push(rng2.gen(10..=100));
+        }
+
+        let mut counter_eq = 0;
+        for it in vec1.iter().zip(vec2.iter()) {
+            let (ai, bi) = it;
+            assert!(*ai >= 10 && *ai <= 100);
+            assert!(*bi >= 10 && *bi <= 100);
+
+            counter_eq += if *ai == *bi {
+                1
+            } else {
+                0
+            }
+        }
+
+        assert!(counter_eq < 10);
     }
   }

@@ -40,7 +40,6 @@ impl Len<u64> for RangeInclusive<u64> {
     }
 }
 
-
 pub(crate) fn remap(val: f32, old_range: &RangeInclusive<f32>, new_range: &RangeInclusive<f32>) -> f32 {
     let old_len = old_range.len().max(f32::EPSILON);
     let new_len = new_range.len();

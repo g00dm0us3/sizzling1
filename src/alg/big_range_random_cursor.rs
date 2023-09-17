@@ -1,5 +1,5 @@
 use std::{collections::HashMap, ops::RangeInclusive};
-use crate::modnar;
+use crate::modnar::{self, Modnar};
 // - TODO: integrate w. range inclusive.
 // - TODO: should be serializable.
 
@@ -9,7 +9,8 @@ pub(crate) struct BigRangeRandomCursor {
     lower_bound: u64,
     upper_bound: u64,
     generated_count: u64,
-    hashmap: HashMap<u64, u64>
+    hashmap: HashMap<u64, u64>,
+    rand: Modnar
 }
 
 impl BigRangeRandomCursor {
@@ -18,7 +19,8 @@ impl BigRangeRandomCursor {
             lower_bound: *range.start(),
             upper_bound: *range.end(),
             generated_count: 0,
-            hashmap: HashMap::new() 
+            hashmap: HashMap::new(),
+            rand: Modnar::new_rng()
         };
 
         // - TODO: move out of constructor.
@@ -33,9 +35,9 @@ impl BigRangeRandomCursor {
     }
 
     fn next(&mut self) -> Option<u64> {
-
+        let rng_number = self.rand.gen(self.lower_bound..=self.upper_bound);
         // - TODO: use frand here
-        self.next_(7)
+        self.next_(rng_number)
     }
 
     fn next_(&mut self, rng_number: u64) -> Option<u64> {
@@ -92,5 +94,24 @@ impl Iterator for IterMut<'_> {
 
     fn next(&mut self) -> Option<Self::Item> {
         self.cursor.next()
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::BigRangeRandomCursor;
+    use std::collections::HashSet;
+
+    #[test]
+    fn test_cursor() {
+        let mut cursor = BigRangeRandomCursor::new(0..=1000, &[]);
+        let mut set = HashSet::<u64>::new();
+
+        let mut iter = cursor.iter_mut();
+        for _ in 0..=1000 {
+            set.insert(iter.next().expect("Iterator exhausted!"));
+        }
+
+        assert_eq!(set.len(), 1001);
     }
 }
