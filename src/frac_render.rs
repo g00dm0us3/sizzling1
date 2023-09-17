@@ -1,4 +1,4 @@
-use std::{ops::RangeInclusive, collections::btree_set::Range};
+use std::ops::RangeInclusive;
 
 use image::{Rgba, RgbaImage};
 
@@ -16,8 +16,8 @@ impl RgbRenderer {
         let height = array.height();
         let log_max = Self::find_log_max(array);
 
-        let mut avg: f32 = 0.0;
-        let mut avg_sq: f32 = 0.0;
+        let avg: f32 = 0.0;
+        let avg_sq: f32 = 0.0;
         let mut cnt: f32 = 0.0;
 
         //let cdf = Self::smoothed_cdf(array, log_max, &alpha_range);
@@ -26,7 +26,7 @@ impl RgbRenderer {
                 let density_val = array[Index2D::from(x, y)];
 
                 let color = if density_val > f32::EPSILON {
-                    let mut alpha = Self::density_to_alpha(density_val, log_max);
+                    let alpha = Self::density_to_alpha(density_val, log_max);
 
                     cnt += 1.0;
                     Rgba::from([

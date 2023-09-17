@@ -1,6 +1,5 @@
 use crate::ff_repository::model::AffineIfs;
 use ndarray::{arr1, Array1};
-use rand::prelude::*;
 use crate::modnar::Modnar;
 use crate::mutators::{apply_mutator_combination, MutatorConfig};
 use crate::util::Point;

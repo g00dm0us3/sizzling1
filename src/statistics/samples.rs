@@ -1,6 +1,6 @@
 
 use std::ops::Index;
-use crate::{statistics::plane::Range2D, util::Point};
+use crate::{statistics::plane::Range2D};
 
 #[rustfmt::skip]
 #[allow(non_camel_case_types)]

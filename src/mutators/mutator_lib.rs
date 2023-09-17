@@ -642,11 +642,11 @@ pub(super) fn secant(p: &Point, v46: f32) -> Point {
 
 #[inline(always)]
 pub(super) fn twintrian(p: &Point, rnd: &mut Modnar, v47: f32) -> Point {
-    psi!(rnd, psi);r!(p,r);
+    psi!(rnd, psi);
     pi!(pi);
     r!(p,r);
 
-    let t = ((sin(psi*r*v47).powf(2.0)).log10() + cos(psi*r*v47));
+    let t = (sin(psi*r*v47).powf(2.0)).log10() + cos(psi*r*v47);
 
     Point::new(
         p.x * t,

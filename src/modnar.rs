@@ -57,6 +57,7 @@ fn random_seed_() -> u64 {
 }
 
 /// LSFR byte feedback
+// - TODO: probably will crash with overflown stack (on Windows main thread stack is about 1MB, other threads it can be set).
 const BYTE_FEEDBACK: [u64; 256] = [
     0x0000000000000000, 0xc70000000000000b, 0x8e0000000000000d, 0x4900000000000006,
     0x1c00000000000001, 0xdb0000000000000a, 0x920000000000000c, 0x5500000000000007,

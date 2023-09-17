@@ -1,5 +1,5 @@
 use std::{collections::HashMap, ops::RangeInclusive};
-use crate::modnar::{self, Modnar};
+use crate::modnar::Modnar;
 // - TODO: integrate w. range inclusive.
 // - TODO: should be serializable.
 

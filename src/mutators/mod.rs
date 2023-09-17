@@ -36,9 +36,9 @@ pub(crate) const ALL_MUTATOR_DISCRIMINANTS: RangeInclusive<u8> = 1..=48;
 // same as [repr(C, u8)], u8 concerns discriminant vals, C concerns size and alignment of params.
 // https://doc.rust-lang.org/reference/type-layout.html
 #[repr(u8)]
+#[allow(unused)]
 #[derive(Copy, Clone)]
 pub(crate) enum Mutators {
-
     Sinus = 1,
     Spherical = 2,
     Swirl = 3,

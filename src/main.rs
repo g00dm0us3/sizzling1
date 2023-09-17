@@ -16,9 +16,7 @@ use statistics::grid_density::DensityEstimator2D;
 
 use chaos_game::ChaosGame;
 
-use crate::{frac_render::RgbRenderer, ds::array_2d::Index2D};
-use alg::combinations;
-use crate::alg::combinations::Combinations;
+use crate::frac_render::RgbRenderer;
 use crate::mutators::{MutatorConfig, Mutators};
 use std::env;
 use std::process::exit;
@@ -44,7 +42,7 @@ fn main() {
     let sample = chaos_game.run_chaos_game(
         ifs,
         Some(&[MutatorConfig::new(1.0, Mutators::Swirl)]),
-        500_000
+        100_000
     );
 
     let density = DensityEstimator2D::from(sample.as_slice()).histogram(256, 256);

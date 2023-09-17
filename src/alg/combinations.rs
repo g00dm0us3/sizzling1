@@ -2,13 +2,14 @@ use num_bigint::BigUint;
 use num_traits::One;
 use std::vec;
 
-const CACHE_SIZE: usize = u16::MAX as usize;
 pub(crate) struct Combinations {
     cache: Vec<u64>
 }
 
 impl Combinations {
-    pub(crate) fn new() -> Self { Self { cache: vec![0; CACHE_SIZE] } }
+    const CACHE_SIZE: usize = u16::MAX as usize;
+
+    pub(crate) fn new() -> Self { Self { cache: vec![0; Self::CACHE_SIZE] } }
 
     // - TODO: get rid of mut.
     fn combinations(&mut self, n: u8, k: u8) -> u64 {
