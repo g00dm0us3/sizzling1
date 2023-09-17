@@ -1,7 +1,10 @@
 use std::ops::{RangeInclusive, Sub, Deref};
 use ndarray::{Array1, arr1};
 
+
+#[derive(Clone)]
 pub(crate) struct Point {
+    // - TODO: Probably should make this box. for some reason it cant be copied.
     base: Array1<f32>,
     pub(crate) x: f32,
     pub(crate) y: f32

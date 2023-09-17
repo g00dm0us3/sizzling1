@@ -1,78 +1,26 @@
 mod mutator_lib;
 
 use crate::{util::Point, modnar::Modnar};
+use crate::mutators::mutator_lib::{bent, blob, cosine, diamond, disc, ex, exponential, fan, fisheye, handkerchief, heart, horseshoe, hyperbolic, julia, polar, popcorn, power, rings, sinus, spherical, spiral, swirl, waves, pdj, fan2, rings2, eyefish, bubble, cylinder, perspective, noise, julian, julias, blur, gaussian, radian_blur, pie, ngon, curl, rectangles, arch, tangent, square, rays, blade, secant, twintrian, cross};
 
-fn call(mutator: Mutators, point: &mut Point, params: &[f32]) {
-    match mutator {
-        Mutators::Lin => todo!(),
-        Mutators::Sinus => todo!(),
-        Mutators::Spherical => todo!(),
-        Mutators::Swirl => todo!(),
-        Mutators::Horseshoe => todo!(),
-        Mutators::Polar => todo!(),
-        Mutators::Handkerchief => todo!(),
-        Mutators::Heart => todo!(),
-        Mutators::Disc => todo!(),
-        Mutators::Spiral => todo!(),
-        Mutators::Hyperbolic => todo!(),
-        Mutators::Diamond => todo!(),
-        Mutators::Ex => todo!(),
-        Mutators::Julia => todo!(),
-        Mutators::Bent => todo!(),
-        Mutators::Waves => todo!(),
-        Mutators::Fisheye => todo!(),
-        Mutators::Popcorn => todo!(),
-        Mutators::Exponential => todo!(),
-        Mutators::Power => todo!(),
-        Mutators::Cosine => todo!(),
-        Mutators::Rings => todo!(),
-        Mutators::Fan => todo!(),
-        Mutators::Blob => todo!(),
-        Mutators::Pdj => todo!(),
-        Mutators::Fan2 => todo!(),
-        Mutators::Rings2 => todo!(),
-        Mutators::Eyefish => todo!(),
-        Mutators::Bubble => todo!(),
-        Mutators::Cylinder => todo!(),
-        Mutators::Perspective => todo!(),
-        Mutators::Noise => todo!(),
-        Mutators::Julian => todo!(),
-        Mutators::Julias => todo!(),
-        Mutators::Blur => todo!(),
-        Mutators::Gaussian => todo!(),
-        Mutators::RadianBlur => todo!(),
-        Mutators::Pie => todo!(),
-        Mutators::Ngon => todo!(),
-        Mutators::Curl => todo!(),
-        Mutators::Rectangles => todo!(),
-        Mutators::Arch => todo!(),
-        Mutators::Tangent => todo!(),
-        Mutators::Square => todo!(),
-        Mutators::Rays => todo!(),
-        Mutators::Blade => todo!(),
-        Mutators::Secant => todo!(),
-        Mutators::Twintrian => todo!(),
-        Mutators::Cross => todo!(),
-    }
-}
-
-pub(crate) struct MutatorConfig<'a> {
+pub(crate) struct MutatorConfig{
     weight: f32,
-    mutator: Mutators,
-    params:&'a [f32]
+    mutator: Mutators
 }
 
 pub(crate) fn apply_mutator_combination(
-    modnar: &mut Modnar,
     mutators: &[MutatorConfig],
-    point: &mut Point
-) {
-    mutators.iter().for_each(|mut_config| {
-        call(
-            mut_config.mutator,
-            point,
-            mut_config.params
-        )
+    point: &Point,
+    rnd: &mut Modnar
+) -> Point {
+    mutators.iter().fold(Point::new(0.0, 0.0), |acc, mutator| {
+        let app_res = call(mutator.mutator, point, rnd);
+
+       Point::new(
+           // - TODO: eh, operator overloading.
+           acc.x + mutator.weight*app_res.x,
+           acc.y + mutator.weight*app_res.y
+       )
     })
 }
 
@@ -80,8 +28,7 @@ pub(crate) fn apply_mutator_combination(
 // https://doc.rust-lang.org/reference/type-layout.html
 #[repr(u8)]
 #[derive(Copy, Clone)]
-enum Mutators {
-    Lin = 0,
+pub(crate) enum Mutators {
     Sinus = 1,
     Spherical = 2,
     Swirl = 3,
@@ -96,38 +43,95 @@ enum Mutators {
     Ex = 12,
     Julia = 13,
     Bent = 14,
-    Waves = 15,
+    Waves { b: f32, c: f32, e: f32, f: f32 } = 15,
     Fisheye = 16,
-    Popcorn = 17,
+    Popcorn { c: f32, f: f32} = 17,
     Exponential = 18,
     Power = 19,
     Cosine = 20,
-    Rings = 21,
-    Fan = 22,
-    Blob = 23,
-    Pdj = 24,
-    Fan2 = 25,
-    Rings2 = 26,
+    Rings { c: f32 } = 21,
+    Fan { c: f32, f: f32 } = 22,
+    Blob { blob_h: f32, blob_l: f32, blob_waves: f32 } = 23,
+    Pdj { pdj_a: f32, pdj_b: f32, pdj_c: f32, pdj_d: f32 } = 24,
+    Fan2 { fx: f32, fy: f32 } = 25,
+    Rings2 { rings2_val: f32 } = 26,
     Eyefish = 27,
     Bubble = 28,
     Cylinder = 29,
-    Perspective = 30,
+    Perspective { p1_angle: f32, p2_dist: f32 } = 30,
     Noise = 31,
-    Julian = 32,
-    Julias = 33,
+    Julian { power: f32, dist: f32 } = 32,
+    Julias { power: f32, dist: f32 } = 33,
     Blur = 34,
     Gaussian = 35,
-    RadianBlur = 36,
-    Pie = 37,
-    Ngon = 38,
-    Curl = 39,
-    Rectangles = 40,
-    Arch = 41,
+    RadianBlur { angle: f32, v36: f32 } = 36,
+    Pie { slices: f32, rotation: f32, thickness: f32 } = 37,
+    Ngon { power: f32, sides: f32, corners: f32, circle: f32 } = 38,
+    Curl { c1: f32, c2: f32 } = 39,
+    Rectangles { rect_x: f32, rect_y: f32 } = 40,
+    Arch { v41: f32 } = 41,
     Tangent = 42,
     Square = 43,
-    Rays = 44,
-    Blade = 45,
-    Secant = 46,
-    Twintrian = 47,
+    Rays { v44: f32 } = 44,
+    Blade { v45: f32 } = 45,
+    Secant { v46: f32 } = 46,
+    Twintrian { v47: f32 } = 47,
     Cross = 48
+}
+
+fn call(
+    mutator: Mutators,
+    p: &Point,
+    rnd: &mut Modnar
+) -> Point {
+    match mutator {
+        Mutators::Sinus => sinus(p),
+        Mutators::Spherical => spherical(p),
+        Mutators::Swirl => swirl(p),
+        Mutators::Horseshoe => horseshoe(p),
+        Mutators::Polar => polar(p),
+        Mutators::Handkerchief => handkerchief(p),
+        Mutators::Heart => heart(p),
+        Mutators::Disc => disc(p),
+        Mutators::Spiral => spiral(p),
+        Mutators::Hyperbolic => hyperbolic(p),
+        Mutators::Diamond => diamond(p),
+        Mutators::Ex => ex(p),
+        Mutators::Julia => julia(p, rnd),
+        Mutators::Bent => bent(p),
+        Mutators::Waves { b, c, e, f }=> waves(p, b, c, e, f),
+        Mutators::Fisheye => fisheye(p),
+        Mutators::Popcorn { c, f } => popcorn(p, c, f),
+        Mutators::Exponential => exponential(p),
+        Mutators::Power => power(p),
+        Mutators::Cosine => cosine(p),
+        Mutators::Rings { c } => rings(p,c),
+        Mutators::Fan { c, f } => fan(p, c, f),
+        Mutators::Blob { blob_h, blob_l, blob_waves } => blob(p, blob_h, blob_l, blob_waves),
+        Mutators::Pdj { pdj_a, pdj_b, pdj_c, pdj_d } => pdj(p, pdj_a, pdj_b, pdj_c, pdj_d),
+        Mutators::Fan2 { fx, fy } => fan2(p, fx, fy),
+        Mutators::Rings2 { rings2_val } => rings2(p, rings2_val),
+        Mutators::Eyefish => eyefish(p),
+        Mutators::Bubble => bubble(p),
+        Mutators::Cylinder => cylinder(p),
+        Mutators::Perspective { p1_angle, p2_dist } => perspective(p, p1_angle, p2_dist),
+        Mutators::Noise => noise(p, rnd),
+        Mutators::Julian { power, dist } => julian(p, rnd, power, dist),
+        Mutators::Julias { power, dist } => julias(p, rnd, power, dist),
+        Mutators::Blur => blur(p, rnd),
+        Mutators::Gaussian => gaussian(p, rnd),
+        Mutators::RadianBlur { angle, v36 } => radian_blur(p, rnd, angle, v36),
+        Mutators::Pie { slices, rotation, thickness } => pie(p, rnd, slices,rotation, thickness),
+        Mutators::Ngon { power, sides, corners, circle } => ngon(p, power, sides, corners, circle),
+        Mutators::Curl { c1, c2 } => curl(p, c1, c2),
+        Mutators::Rectangles { rect_x, rect_y } => rectangles(p, rect_x, rect_y),
+        Mutators::Arch { v41 } => arch(p, rnd, v41),
+        Mutators::Tangent => tangent(p),
+        Mutators::Square => square(p, rnd),
+        Mutators::Rays { v44 } => rays(p, rnd, v44),
+        Mutators::Blade { v45 } => blade(p, rnd, v45),
+        Mutators::Secant { v46 } => secant(p, v46),
+        Mutators::Twintrian { v47 } => twintrian(p, rnd, v47),
+        Mutators::Cross => cross(p),
+    }
 }

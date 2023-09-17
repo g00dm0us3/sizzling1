@@ -1,14 +1,8 @@
 use crate::{util::Point, modnar::Modnar};
 use std::ops::Deref;
 
-trait PointOps {
-    fn r_f(&self) -> f32;
-    fn rsq_f(&self) -> f32;
-    fn theta_f(&self) -> f32;
-    fn phi_f(&self) -> f32;
-}
 
-impl PointOps for Point {
+impl Point {
     fn r_f(&self) -> f32 {
         self.dot(self.deref()).sqrt()
     }
@@ -46,25 +40,26 @@ fn lambda(rnd: &mut Modnar) -> f32 {
     if rnd.gen_f32() < 0.5 { -1.0 } else { 1.0 }
 }
 
+/// Mutator Lib
 #[inline(always)]
-fn sinus(p: &Point) -> Point {
+pub(super) fn sinus(p: &Point) -> Point {
     Point::new(p.x.sin(), p.y.sin())
 }
 
 #[inline(always)]
-fn spherical(p: &Point) -> Point {
+pub(super) fn spherical(p: &Point) -> Point {
     let rsq = p.rsq_f();
     Point::new(p.x/rsq, p.y/rsq)
 }
 
 #[inline(always)]
-fn swirl(p: &Point) -> Point {
+pub(super) fn swirl(p: &Point) -> Point {
     let rsq = p.rsq_f();
     Point::new(p.x*rsq.sin() - p.y*rsq.cos(), p.x*rsq.cos() + p.y*rsq.sin())
 }
 
 #[inline(always)]
-fn horseshoe(p: &Point) -> Point { 
+pub(super) fn horseshoe(p: &Point) -> Point {
     Point::new(
         (p.x -p.y)*(p.x+p.y)/p.r_f(),
         2.0*p.x*p.y/p.r_f()
@@ -72,7 +67,7 @@ fn horseshoe(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn polar(p: &Point) -> Point {
+pub(super) fn polar(p: &Point) -> Point {
     Point::new(
         p.theta_f() / std::f32::consts::PI,
         p.r_f() - 1.0
@@ -80,7 +75,7 @@ fn polar(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn handkerchief(p: &Point) -> Point { 
+pub(super) fn handkerchief(p: &Point) -> Point {
     Point::new(
         p.r_f()*((p.theta_f() + p.r_f()).sin()),
         p.r_f()*(p.theta_f() - p.r_f().cos())
@@ -140,7 +135,8 @@ fn cos(val: f32) -> f32 { val.cos() }
 fn sqrt(val: f32) -> f32 { val.sqrt() }
 fn tan(val: f32) -> f32 { val.tan() }
 
-fn heart(p: &Point) -> Point {
+#[inline(always)]
+pub(super) fn heart(p: &Point) -> Point {
     theta!(p, theta);
     Point::new(
         p.r_f()*((theta*p.r_f()).sin()),
@@ -149,7 +145,7 @@ fn heart(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn disc(p: &Point) -> Point {
+pub(super) fn disc(p: &Point) -> Point {
     r!(p, r);
     theta!(p, theta);
     pi!(pi);
@@ -161,7 +157,7 @@ fn disc(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn spiral(p: &Point) -> Point { 
+pub(super) fn spiral(p: &Point) -> Point {
     theta!(p, theta);
     r!(p, r);
 
@@ -173,7 +169,7 @@ fn spiral(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn hyperbolic(p: &Point) -> Point {  
+pub(super) fn hyperbolic(p: &Point) -> Point {
     theta!(p, theta);
     r!(p, r);
 
@@ -186,7 +182,7 @@ fn hyperbolic(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn diamond(p: &Point) -> Point {  
+pub(super) fn diamond(p: &Point) -> Point {
     theta!(p, theta);
     r!(p, r);
 
@@ -197,7 +193,7 @@ fn diamond(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn ex(p: &Point) -> Point { 
+pub(super) fn ex(p: &Point) -> Point {
     theta!(p, theta);
     r!(p, r);
 
@@ -211,7 +207,7 @@ fn ex(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn julia(p: &Point, rnd: &mut Modnar) -> Point { 
+pub(super) fn julia(p: &Point, rnd: &mut Modnar) -> Point {
     theta!(p, theta);
     r!(p, r);
 
@@ -224,7 +220,7 @@ fn julia(p: &Point, rnd: &mut Modnar) -> Point {
 }
 
 #[inline(always)]
-fn bent(p: &Point) -> Point { 
+pub(super) fn bent(p: &Point) -> Point {
     if p.x < 0.0 && p.y >= 0.0 {
         return Point::new(2.0*p.x, p.y);
     }
@@ -241,7 +237,7 @@ fn bent(p: &Point) -> Point {
 } 
 
 #[inline(always)]
-fn waves(p: &Point, b: f32, c: f32, e: f32, f: f32) -> Point {
+pub(super) fn waves(p: &Point, b: f32, c: f32, e: f32, f: f32) -> Point {
     return Point::new(
         p.x + b*sin(p.y/(c*c)),
         p.y + e*sin(p.x/(f*f))
@@ -249,7 +245,7 @@ fn waves(p: &Point, b: f32, c: f32, e: f32, f: f32) -> Point {
 }
 
 #[inline(always)]
-fn fisheye(p: &Point) -> Point { 
+pub(super) fn fisheye(p: &Point) -> Point {
     r!(p, r);
     let r = 2.0/(r + 1.0);
     Point::new(
@@ -259,7 +255,7 @@ fn fisheye(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn popcorn(p: &Point, c: f32, f: f32) -> Point {
+pub(super) fn popcorn(p: &Point, c: f32, f: f32) -> Point {
     Point::new(
         p.x+c*sin(tan(3.0*p.y)),
         p.y+f*sin(tan(3.0*p.x))
@@ -267,7 +263,7 @@ fn popcorn(p: &Point, c: f32, f: f32) -> Point {
 }
 
 #[inline(always)]
-fn exponential(p: &Point) -> Point { 
+pub(super) fn exponential(p: &Point) -> Point {
     let e = (p.x - 1.0).exp();
     pi!(pi);
 
@@ -278,7 +274,7 @@ fn exponential(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn power(p: &Point) -> Point { 
+pub(super) fn power(p: &Point) -> Point {
     theta!(p, theta);
     let r = p.r_f().powf(sin(theta));
 
@@ -292,7 +288,7 @@ fn sinh(val: f32) -> f32 { val.sinh() }
 fn cosh(val: f32) -> f32 { val.cosh() }
 
 #[inline(always)]
-fn cosine(p: &Point) -> Point { 
+pub(super) fn cosine(p: &Point) -> Point {
     pi!(pi);
 
     Point::new(
@@ -304,7 +300,7 @@ fn cosine(p: &Point) -> Point {
 fn fmod(val: f32, val1: f32) -> f32 { val % val1 }
 
 #[inline(always)]
-fn rings(p: &Point, c: f32) -> Point { 
+pub(super) fn rings(p: &Point, c: f32) -> Point {
     theta!(p, t);
     r!(p, r);
     let com = fmod(r+c*c, 2.0*c*c) - c*c+r*(1.0-c*c);
@@ -316,7 +312,7 @@ fn rings(p: &Point, c: f32) -> Point {
 }
 
 #[inline(always)]
-fn fan(p: &Point, c: f32, f: f32) -> Point {  
+pub(super) fn fan(p: &Point, c: f32, f: f32) -> Point {
     pi!(pi);
     theta!(p, th);
     r!(p, r);
@@ -337,7 +333,7 @@ fn fan(p: &Point, c: f32, f: f32) -> Point {
 }
 
 #[inline(always)]
-fn blob(p: &Point, blob_h: f32, blob_l: f32, blob_waves: f32) -> Point { 
+pub(super) fn blob(p: &Point, blob_h: f32, blob_l: f32, blob_waves: f32) -> Point {
     theta!(p, theta);
     r!(p, r);
 
@@ -350,7 +346,7 @@ fn blob(p: &Point, blob_h: f32, blob_l: f32, blob_waves: f32) -> Point {
 }
 
 #[inline(always)]
-fn pdj(p: &Point, pdj_a: f32, pdj_b: f32, pdj_c: f32, pdj_d: f32) -> Point {  
+pub(super) fn pdj(p: &Point, pdj_a: f32, pdj_b: f32, pdj_c: f32, pdj_d: f32) -> Point {
     Point::new(
         sin(pdj_a*p.y) - cos(pdj_b*p.x),
         sin(pdj_c*p.x) - cos(pdj_d*p.y)
@@ -360,7 +356,7 @@ fn pdj(p: &Point, pdj_a: f32, pdj_b: f32, pdj_c: f32, pdj_d: f32) -> Point {
 fn trunc(val: f32) -> f32 {  val.trunc() }
 
 #[inline(always)]
-fn fan2(p: &Point, fx: f32, fy: f32) -> Point {
+pub(super) fn fan2(p: &Point, fx: f32, fy: f32) -> Point {
     theta!(p, theta);
     r!(p, r);
     pi!(pi);
@@ -384,7 +380,7 @@ fn fan2(p: &Point, fx: f32, fy: f32) -> Point {
 }  
 
 #[inline(always)]
-fn rings2(p: &Point, rings2_val: f32) -> Point { 
+pub(super) fn rings2(p: &Point, rings2_val: f32) -> Point {
     theta!(p, theta);
     r!(p, r);
 
@@ -398,7 +394,7 @@ fn rings2(p: &Point, rings2_val: f32) -> Point {
 }
 
 #[inline(always)]
-fn eyefish(p: &Point) -> Point { 
+pub(super) fn eyefish(p: &Point) -> Point {
     r!(p, r);
 
     Point::new(
@@ -408,7 +404,7 @@ fn eyefish(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn bubble(p: &Point) -> Point { 
+pub(super) fn bubble(p: &Point) -> Point {
     rsq!(p, rsq);
 
     Point::new(
@@ -418,7 +414,7 @@ fn bubble(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn cylinder(p: &Point) -> Point { 
+pub(super) fn cylinder(p: &Point) -> Point {
     Point::new(
         sin(p.x),
         p.y
@@ -426,7 +422,7 @@ fn cylinder(p: &Point) -> Point {
 }
 
 #[inline(always)]
-fn perspective(p: &Point, p1_angle: f32, p2_dist: f32) -> Point { 
+pub(super) fn perspective(p: &Point, p1_angle: f32, p2_dist: f32) -> Point {
     let common = p2_dist/(p2_dist-p.y*sin(p1_angle));
 
     Point::new(
@@ -436,7 +432,7 @@ fn perspective(p: &Point, p1_angle: f32, p2_dist: f32) -> Point {
 }
 
 #[inline(always)]
-fn noise(p: &Point, rnd: &mut Modnar) -> Point { 
+pub(super) fn noise(p: &Point, rnd: &mut Modnar) -> Point {
     pi!(pi);
     let psi1 = psi(rnd);
     let psi2 = psi(rnd);
@@ -448,7 +444,7 @@ fn noise(p: &Point, rnd: &mut Modnar) -> Point {
 } 
 
 #[inline(always)]
-fn julian(p: &Point, rnd: &mut Modnar, power: f32, dist: f32) -> Point { 
+pub(super) fn julian(p: &Point, rnd: &mut Modnar, power: f32, dist: f32) -> Point {
     psi!(rnd, psi);
     phi!(p, phi);
     r!(p, r);
@@ -464,7 +460,7 @@ fn julian(p: &Point, rnd: &mut Modnar, power: f32, dist: f32) -> Point {
 } 
 
 #[inline(always)]
-fn julias(p: &Point, rnd: &mut Modnar, power: f32, dist: f32) -> Point { 
+pub(super) fn julias(p: &Point, rnd: &mut Modnar, power: f32, dist: f32) -> Point {
     psi!(rnd, psi);
     phi!(p, phi);
     r!(p, r);
@@ -481,7 +477,7 @@ fn julias(p: &Point, rnd: &mut Modnar, power: f32, dist: f32) -> Point {
 }
 
 #[inline(always)]
-fn blur(p: &Point, rnd: &mut Modnar) -> Point { 
+pub(super) fn blur(p: &Point, rnd: &mut Modnar) -> Point {
     psi!(rnd, psi);
     psi!(rnd, psi2);
     pi!(pi);
@@ -493,7 +489,7 @@ fn blur(p: &Point, rnd: &mut Modnar) -> Point {
 }
 
 #[inline(always)]
-fn gaussian(p: &Point, rnd: &mut Modnar) -> Point { 
+pub(super) fn gaussian(p: &Point, rnd: &mut Modnar) -> Point {
     pi!(pi);
     psi!(rnd, psi);
     psi!(rnd, psi2);
@@ -509,113 +505,161 @@ fn gaussian(p: &Point, rnd: &mut Modnar) -> Point {
     )   
 }
 
-/*
+#[inline(always)]
+pub(super) fn radian_blur(p: &Point, rnd: &mut Modnar, angle: f32, v36: f32) -> Point {
+    psi!(rnd, psi);
+    psi!(rnd, psi2);
+    psi!(rnd, psi3);
+    psi!(rnd, psi4);
+    phi!(p, phi);
+    r!(p, r);
 
-static inline void radian_blur A, float angle, float v36 B {
-    PSI
-    PSI2
-    PSI3
-    PSI4
-    PHI
-    R
-    X_Y
-    float t1 = v36*((psi+psi2+psi3+psi4)-2);
-    float t2 = phi+t1;
-    float t3 = t1*cos(angle) - 1;
+    let t1 = v36*((psi+psi2+psi3+psi4)-2.0);
+    let t2 = phi+t1;
+    let t3 = t1*cos(angle) - 1.0;
 
-    PF2M(r*cos(t2)+t3*x, r*sin(t2)+t3*y, (1/v36))
+    Point::new(
+        r*cos(t2)+t3*p.x * (1.0 / v36),
+        r*sin(t2)+t3*p.y * (1.0 / v36)
+    )
 }
 
-static inline void pie A, float slices, float rotation, float thickness B {
-    PSI
-    PSI2
-    PSI3
+#[inline(always)]
+pub(super) fn pie(p: &Point, rnd: &mut Modnar, slices: f32, rotation: f32, thickness: f32) -> Point {
+    psi!(rnd, psi);
+    psi!(rnd, psi2);
+    psi!(rnd, psi3);
+    pi!(pi);
 
-    float t1 = trunc(psi*slices+0.5);
-    float t2 = rotation +(2*pi/slices)*(t1 + psi2*thickness);
+    let t1 = trunc(psi*slices+0.5);
+    let  t2 = rotation +(2.0*pi/slices)*(t1 + psi2*thickness);
 
-    PF2M(cos(t2), sin(t2), psi3)
+    Point::new(
+        cos(t2) * psi3,
+        sin(t2) * psi3
+    )
 }
 
-static inline void ngon A, float power, float sides, float corners, float circle B {
-    PHI
-    R
-    float t3 = phi - sides*floor(phi/sides);
+#[inline(always)]
+pub(super) fn ngon(p: &Point, power: f32, sides: f32, corners: f32, circle: f32) -> Point {
+    phi!(p, phi);
+    r!(p, r);
 
-    float t4 = t3 > sides/2 ? t3 : t3 - sides;
+    let t3 = phi - sides*(phi/sides).floor();
+    let t4 = if t3 > sides/2.0  { t3 } else { t3 - sides };
+    let k = (corners*(1.0/cos(t4)-1.0)+circle) / (r.powf(power) + f32::EPSILON);
 
-    float k = (corners*(1/cos(t4)-1)+circle) / (pow(r, power) + FLT_EPSILON);
 
-    PF2M(p->x, p->y, k)
+    Point::new(
+        k*p.x,
+        k*p.y
+    )
 }
 
-static inline void curl A, float c1, float c2 B {
-    X_Y
-    float t1 = 1+c1*x+c2*(x*x-y*y);
-    float t2 = c1*y+2*c2*x*y;
+#[inline(always)]
+pub(super) fn curl(p: &Point, c1: f32, c2: f32) -> Point {
+    let t1 = 1.0+c1*p.x+c2*(p.x*p.x-p.y*p.y);
+    let t2 = c1*p.y+2.0*c2*p.x*p.y;
 
-    PF2M(x*t1+y*t2, y*t1 - x*t2, 1/(t1*t1+t2*t2))
+    Point::new(
+        (p.x*t1+p.y*t2) / (t1*t1+t2*t2),
+        (p.y*t1 - p.x*t2) / (t1*t1+t2*t2)
+    )
 }
 
-static inline void rectangles A, float rect_x, float rect_y B {
-    X_Y
-    PF2((2*floor(x/rect_x)+1)*rect_x - x, (2*floor(y/rect_y)+1)*rect_y - y)
+fn floor(val: f32) -> f32 { val.floor() }
+
+#[inline(always)]
+pub(super) fn rectangles(p: &Point, rect_x: f32, rect_y: f32) -> Point {
+    Point::new(
+        (2.0*floor(p.x/rect_x)+1.0)*rect_x - p.x,
+        (2.0*floor(p.y/rect_y)+1.0)*rect_y - p.y
+    )
 }
 
-static inline void arch A, float v41 B {
-    PSI
-    PF2(sin(psi*pi*v41), sin(psi*pi*v41)*sin(psi*pi*v41)/cos(psi*pi*v41))
+#[inline(always)]
+pub(super) fn arch(p: &Point, rnd: &mut Modnar, v41: f32) -> Point {
+    psi!(rnd, psi);
+    pi!(pi);
+    Point::new(
+        sin(psi*pi*v41),
+        sin(psi*pi*v41)*sin(psi*pi*v41)/cos(psi*pi*v41)
+    )
 }
 
-static inline void tangent A B {
-    X_Y
-    PF2(sin(x)/cos(y), tan(y))
+#[inline(always)]
+pub(super) fn tangent(p: &Point) -> Point {
+    Point::new(
+        sin(p.x)/cos(p.y),
+        tan(p.y)
+    )
 }
 
-static inline void square A B {
-    PSI
-    PSI2
+#[inline(always)]
+pub(super) fn square(p: &Point, rnd: &mut Modnar) -> Point {
+    psi!(rnd, psi);
+    psi!(rnd, psi2);
 
-    PF2(psi - 0.5, psi2 - 0.5)
+    Point::new(
+        psi - 0.5,
+        psi2 - 0.5
+    )
 }
 
-static inline void rays A, float v44 B {
-    PSI
-    X_Y
-    RSQ
+#[inline(always)]
+pub(super) fn rays(p: &Point, rnd: &mut Modnar, v44: f32) -> Point {
+    psi!(rnd, psi);
+    rsq!(p, rsq);
 
-    float m = (v44*tan(psi*v44))/rsq;
-    PF2M(cos(x), sin(y), m)
+    let m = (v44*tan(psi*v44))/rsq;
+
+    Point::new(
+        cos(p.x) * m,
+        sin(p.y) * m
+    )
 }
 
-static inline void blade A, float v45 B {
-    PSI
-    R
-    X
+#[inline(always)]
+pub(super) fn blade(p: &Point, rnd: &mut Modnar, v45: f32) -> Point {
+    psi!(rnd, psi);
+    r!(p,r);
 
-    PF2M(cos(psi*r*v45)+sin(psi*r*v45), cos(psi*r*v45) - sin(psi*r*v45), x)
+    Point::new(
+        cos(psi*r*v45)+sin(psi*r*v45) * p.x,
+        cos(psi*r*v45) - sin(psi*r*v45) * p.x
+    )
 }
 
-static inline void secant A, float v46 B {
-    R
-    X
+#[inline(always)]
+pub(super) fn secant(p: &Point, v46: f32) -> Point {
+    r!(p,r);
 
-    PF2(x, 1/(v46*cos(v46*r)))
+    Point::new(
+        p.x,
+        1.0/(v46*cos(v46*r))
+    )
 }
 
-static inline void twintrian A, float v47 B {
-    X
+#[inline(always)]
+pub(super) fn twintrian(p: &Point, rnd: &mut Modnar, v47: f32) -> Point {
+    psi!(rnd, psi);r!(p,r);
+    pi!(pi);
+    r!(p,r);
 
-    float psi = psi_f(e_source);
+    let t = ((sin(psi*r*v47).powf(2.0)).log10() + cos(psi*r*v47));
 
-    float t = log10(pow(sin(psi*r_f(p)*v47), 2) + cos(psi*r_f(p)*v47));
-
-    PF2(x*t, x*(t - pi*sin(psi*r_f(p)*v47)))
+    Point::new(
+        p.x * t,
+        p.x*(t - pi*sin(psi*r*v47))
+    )
 }
 
-static inline void cross A B {
-    X_Y
-    float v = sqrt(1/pow((x*x-y*y),2));
-    PF2M(x, y, v)
+#[inline(always)]
+pub(super) fn cross(p: &Point) -> Point {
+    let v = sqrt(1.0/(p.x*p.x-p.y*p.y).powf(2.0));
+
+    Point::new(
+        p.x * v,
+        p.y * v
+    )
 }
-*/
