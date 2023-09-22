@@ -21,6 +21,12 @@ impl Point {
         self.x = self.base[0];
         self.y = self.base[1];
     }
+
+    pub(crate) fn dst_fast(&self, rhs: &Point) -> f32 {
+        // sqrt ( |x1 - x2| + |y1 - y2| )
+        // if both are small, it will be small.
+        ((self.x - rhs.x).abs() + (self.y - rhs.y).abs()).sqrt()
+    }
 }
 
 // - NOTE: Deref, via deref coercion in many situations 

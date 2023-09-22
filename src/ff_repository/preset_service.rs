@@ -3,7 +3,7 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fs::read_to_string;
 
-use crate::ff_repository::model::AffineIfs;
+use crate::ff_repository::affine_transform::AffineIfs;
 
 #[derive(Debug)]
 pub(crate) enum PresetServiceError {
@@ -94,7 +94,7 @@ impl AffineIfsPreprocessor {
 
 #[cfg(test)]
 mod tests {
-    use crate::ff_repository::model::AffineIfs;
+    use crate::ff_repository::affine_transform::AffineIfs;
 
     #[test]
     fn test_json_parse() {

@@ -11,7 +11,7 @@ mod usecase;
 
 use std::time::Instant;
 
-use ff_repository::service::PresetService;
+use ff_repository::preset_service::PresetService;
 use statistics::grid_density::DensityEstimator2D;
 
 use chaos_game::ChaosGame;

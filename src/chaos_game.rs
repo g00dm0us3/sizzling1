@@ -1,5 +1,5 @@
 use std::ops::Deref;
-use crate::ff_repository::model::AffineIfs;
+use crate::ff_repository::affine_transform::AffineIfs;
 use crate::modnar::Modnar;
 use crate::mutators::{apply_mutator_combination, MutatorConfig};
 use crate::util::Point;
@@ -60,5 +60,37 @@ impl ChaosGame {
             
             point_visitor(&point);
         }
+    }
+    // - TODO: refactor.
+    pub(crate) fn run_convergence_test(
+        rnd: &mut Modnar,
+        affine_ifs: &AffineIfs,
+        mutators: Option<&[MutatorConfig]>
+    ) -> bool {
+        let mut nw: Point = Point::new(-1.0, 1.0);
+        let mut se = Point::new(1.0, -1.0);
+
+        const ITERATIONS: u8 = 30;
+
+        for i in 1..=ITERATIONS {
+            let r: f32 = rnd.gen_f32();
+
+            // select transform at random
+            let transform = affine_ifs.transforms
+                .iter()
+                .find(|t| r <= t.p)
+                .expect("Didn't find transform!");
+
+            let mat = &transform.mat;
+            nw.mul(mat.deref());
+            se.mul(mat.deref());
+
+            if let Some(mutators) = mutators {
+                nw = apply_mutator_combination(mutators, &nw, mat, rnd);
+                se = apply_mutator_combination(mutators, &se, mat, rnd);
+            }
+        }
+
+        nw.dst_fast(&se) <= std::f32::consts::SQRT_2 * 0.1
     }
 }

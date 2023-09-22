@@ -1,2 +1,2 @@
 pub(crate) mod combinations;
-mod big_range_random_cursor;
+pub(crate) mod big_range_random_cursor;

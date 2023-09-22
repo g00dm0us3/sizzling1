@@ -2,7 +2,7 @@ mod mutator_lib;
 
 use std::ops::RangeInclusive;
 use crate::{util::Point, modnar::Modnar};
-use crate::ff_repository::model::AffineMat;
+use crate::ff_repository::affine_transform::AffineMat;
 use crate::mutators::mutator_lib::{bent, blob, cosine, diamond, disc, ex, exponential, fan, fisheye, handkerchief, heart, horseshoe, hyperbolic, julia, polar, popcorn, power, rings, sinus, spherical, spiral, swirl, waves, pdj, fan2, rings2, eyefish, bubble, cylinder, perspective, noise, julian, julias, blur, gaussian, radian_blur, pie, ngon, curl, rectangles, arch, tangent, square, rays, blade, secant, twintrian, cross};
 
 pub(crate) struct MutatorConfig{
