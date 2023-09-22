@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::format;
 use serde::Deserialize;
 use crate::ff_repository::json_helper::JsonHelper;
 use crate::ff_repository::repository_error::RepositoryError;
@@ -13,6 +14,19 @@ pub(crate) struct MutatorDescription {
     pub params: Option<Vec<MutatorParam>>
 }
 
+impl MutatorDescription {
+    pub(crate) fn param(&self, name: &str) -> f32 {
+        let screen_name = &self.screen_name;
+        self.params
+            .as_ref()
+            .expect(&format!("No params for mutator {screen_name}"))
+            .iter()
+            .find(|param| param.name == name)
+            .expect(&format!("No param with name {name} for mutator {screen_name}"))
+            .default_value
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
 pub(crate) struct MutatorParam {
     pub name: String,
@@ -25,7 +39,7 @@ pub(crate) struct MutatorDescriptionService {
     mutator_desc: Vec<MutatorDescription>
 }
 
-impl AsRef<Vec<MutatorDescription>>  for MutatorDescriptionService {
+impl AsRef<Vec<MutatorDescription>> for MutatorDescriptionService {
     fn as_ref(&self) -> &Vec<MutatorDescription> {
         &self.mutator_desc
     }
