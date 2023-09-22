@@ -1,6 +1,9 @@
+use std::collections::HashMap;
 use serde::Deserialize;
+use crate::ff_repository::json_helper::JsonHelper;
+use crate::ff_repository::repository_error::RepositoryError;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Default, Clone, Debug)]
 pub(crate) struct MutatorDescription {
     pub enum_id: u8,
     pub screen_name: String,
@@ -10,12 +13,46 @@ pub(crate) struct MutatorDescription {
     pub params: Option<Vec<MutatorParam>>
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 pub(crate) struct MutatorParam {
     pub name: String,
     pub lower_bound: f32,
     pub upper_bound: f32,
     pub default_value: f32
+}
+
+pub(crate) struct MutatorDescriptionService {
+    mutator_desc: Vec<MutatorDescription>
+}
+
+impl AsRef<Vec<MutatorDescription>>  for MutatorDescriptionService {
+    fn as_ref(&self) -> &Vec<MutatorDescription> {
+        &self.mutator_desc
+    }
+}
+
+impl MutatorDescriptionService {
+    pub(crate) fn load(db_path: &str) -> Result<Self, RepositoryError> {
+        match JsonHelper::read_db(db_path) {
+            Ok(json) => {
+                JsonHelper::parse_data::<HashMap<String, MutatorDescription>>(&json).map(|parsed_data|  {
+                    Self { mutator_desc: Self::transform(&parsed_data) }
+                })
+            }
+            Err(error) => { Err(error) }
+        }
+    }
+
+    fn transform(mutator_desc: &HashMap<String, MutatorDescription>) -> Vec<MutatorDescription> {
+        let mut result = vec![MutatorDescription::default(); mutator_desc.len()];
+
+        mutator_desc.values().for_each(|desc| {
+            let index = desc.enum_id as usize - 1;
+            result[index] = desc.clone();
+        });
+
+        result
+    }
 }
 
 #[cfg(test)]
@@ -69,66 +106,3 @@ mod tests {
         eprintln!("{:?}", ifs);
     }
 }
-
-/*impl<'de> Deserialize<'de> for AffineTransform {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-    {
-        #[rustfmt::skip]
-        #[allow(non_camel_case_types)]
-        #[derive(Deserialize)]
-        enum Fields { a, b, c, d, e, f, p }
-
-        struct AffineTransformVisitor;
-        impl<'de> Visitor<'de> for AffineTransformVisitor {
-            type Value = AffineTransform;
-
-            fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
-                return formatter.write_str("expecting AffineTransform");
-            }
-
-            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
-                where
-                    A: serde::de::MapAccess<'de>,
-            {
-                let mut a: Option<f32> = None;
-                let mut b: Option<f32> = None;
-                let mut c: Option<f32> = None;
-                let mut d: Option<f32> = None;
-                let mut e: Option<f32> = None;
-                let mut f: Option<f32> = None;
-                let mut p: Option<f32> = None;
-
-                // jfc. Visitor sees map, and expects its keys to be of the type
-                // inferred from match. To parse this type it invokes Visitor for FieldsType (which is auto derived).
-                while let Some(key) = map.next_key()? {
-                    match key {
-                        Fields::a => a = map.next_value()?,
-                        Fields::b => b = map.next_value()?,
-                        Fields::c => c = map.next_value()?,
-                        Fields::d => d = map.next_value()?,
-                        Fields::e => e = map.next_value()?,
-                        Fields::f => f = map.next_value()?,
-                        Fields::p => p = map.next_value()?,
-                    }
-                }
-
-                let a = a.ok_or_else(|| serde::de::Error::missing_field("a"))?;
-                let b = b.ok_or_else(|| serde::de::Error::missing_field("b"))?;
-                let c = c.ok_or_else(|| serde::de::Error::missing_field("c"))?;
-                let d = d.ok_or_else(|| serde::de::Error::missing_field("d"))?;
-                let e = e.ok_or_else(|| serde::de::Error::missing_field("e"))?;
-                let f = f.ok_or_else(|| serde::de::Error::missing_field("f"))?;
-                let p = p.ok_or_else(|| serde::de::Error::missing_field("p"))?;
-
-                return Ok(AffineTransform {
-                    mat: AffineMat::from(arr2(&[[a, b, c], [d, e, f]])),
-                    p: p,
-                });
-            }
-        }
-
-        return deserializer.deserialize_map(AffineTransformVisitor);
-    }
-}*/

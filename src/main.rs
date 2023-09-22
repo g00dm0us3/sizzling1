@@ -20,6 +20,7 @@ use crate::frac_render::RgbRenderer;
 use crate::mutators::{MutatorConfig, Mutators};
 use std::env;
 use std::process::exit;
+use crate::ff_repository::mutator_description_service::{MutatorDescriptionService};
 
 // grids, which are too small don't yield detailed results (all samples endup in the same bins)
 // - TODO: quad-tree to grid?
@@ -28,14 +29,19 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     const IFS_NAME: &str = "Serpinski carpet";
-    if args.len() < 2 {
-        eprintln!("Path to IFS presets not set!");
+    if args.len() < 3 {
+        eprintln!("Either path to IFS presets or to mutator desc not set!");
         exit(-2);
     }
     let ifs_presets_json_path = &args[1];
     // - TODO: erase before commit.
     let presets = PresetsRepository::load(ifs_presets_json_path)
-        .expect("DB not found.");
+        .expect("IFS presets not found!");
+
+    let mut_desc_json_path = &args[2];
+    let mut_desc = MutatorDescriptionService::load(mut_desc_json_path)
+        .expect("Mutator descriptions not found!");
+
     let ifs = presets.find_ifs_by(IFS_NAME).expect(&format!("Couldn't find {IFS_NAME}"));
     let mut chaos_game = ChaosGame::new();
 

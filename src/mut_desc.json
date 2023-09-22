@@ -1,10 +1,4 @@
 {
-  "lin": {
-    "enum_id": 0,
-    "screen_name": "lin",
-    "is_rand": false,
-    "requires_affine": false
-  },
   "sinus": {
     "enum_id": 1,
     "screen_name": "sinus",

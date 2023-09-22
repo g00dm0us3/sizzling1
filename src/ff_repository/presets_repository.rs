@@ -1,8 +1,4 @@
 use std::cmp::Ordering;
-use std::error::Error;
-use std::fmt::Display;
-use std::fs::read_to_string;
-
 use crate::ff_repository::affine_transform::{AffineIfs, AffineTransform};
 use crate::ff_repository::json_helper::JsonHelper;
 use crate::ff_repository::repository_error::RepositoryError;
