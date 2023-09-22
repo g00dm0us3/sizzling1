@@ -1,5 +1,4 @@
-use serde::de::Visitor;
-use serde::{Deserialize, Deserializer};
+use serde::Deserialize;
 
 #[derive(Deserialize, Debug)]
 pub(crate) struct MutatorDescription {

@@ -3,64 +3,46 @@ use std::error::Error;
 use std::fmt::Display;
 use std::fs::read_to_string;
 
-use crate::ff_repository::affine_transform::AffineIfs;
+use crate::ff_repository::affine_transform::{AffineIfs, AffineTransform};
+use crate::ff_repository::json_helper::JsonHelper;
+use crate::ff_repository::repository_error::RepositoryError;
 
-#[derive(Debug)]
-pub(crate) enum PresetServiceError {
-    FileNotFound,
-
-    // wtf is trait object
-    JSONDecoding,
-}
-
-impl Display for PresetServiceError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        return write!(f, "{:?}", self);
-    }
-}
-
-impl Error for PresetServiceError {}
-
-pub(crate) struct PresetService {
+pub(crate) struct PresetsRepository {
     pub(crate) affine_presets: Vec<AffineIfs>,
+    pub(crate) flatted: Vec<AffineTransform>
 }
 
-impl PresetService {
-    pub(crate) fn load(db_path: &str) -> Result<Self, PresetServiceError> {
-        let json: String = Self::read_db(db_path)?;
-        let mut self_ = Self::parse_data(json)?;
-        self_.post_process();
-        return Ok(self_);
+impl PresetsRepository {
+    pub(crate) fn load(db_path: &str) -> Result<Self, RepositoryError> {
+        // - TODO: how to forward error btw maps?
+        match JsonHelper::read_db(db_path) {
+            Ok(json) => {
+                JsonHelper::parse_data(&json)
+                    .map(|parse_result: Vec<AffineIfs>| {
+                        let mut self_ = Self {
+                            affine_presets: parse_result,
+                            flatted: Vec::<AffineTransform>::new()
+                        };
+                        self_.post_process();
+                        self_
+                    })
+            },
+            Err(error) => { Err(error) }
+        }
     }
 
     pub(crate) fn find_ifs_by(&self, name: &str) -> Option<&AffineIfs> {
         self.affine_presets.iter().find(|ifs| ifs.name == name)
     }
 
-    fn read_db(db_path: &str) -> Result<String, PresetServiceError> {
-        match read_to_string(db_path) {
-            Ok(string_data) => return Ok(string_data),
-            Err(_) => return Err(PresetServiceError::FileNotFound),
-        };
-    }
-
-    fn parse_data(json: String) -> Result<Self, PresetServiceError> {
-        type ParseResult = serde_json::Result<Vec<AffineIfs>>;
-
-        match serde_json::from_str(&json) as ParseResult {
-            Ok(vec_affine_ifs) => {
-                return Ok(Self {
-                    affine_presets: vec_affine_ifs,
-                })
-            }
-            Err(_) => return Err(PresetServiceError::JSONDecoding),
-        };
-    }
-
     fn post_process(&mut self) {
         for affine_ifs in &mut self.affine_presets {
             AffineIfsPreprocessor::sort_ifs(affine_ifs);
             AffineIfsPreprocessor::set_cumulative_probs(affine_ifs);
+
+            // - WARNING: it's important that we add those to the flatted array only after transforms in the ifs
+            // are sorted. Need to introduce some sort of lock on this order.
+            self.flatted.append(&mut affine_ifs.transforms.clone());
         }
     }
 }

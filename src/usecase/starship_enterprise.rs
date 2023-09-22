@@ -1,6 +1,7 @@
 use crate::modnar;
 use crate::alg::big_range_random_cursor;
-use crate::ff_repository::preset_service::PresetService;
+use crate::ff_repository::presets_repository::PresetsRepository;
+use crate::mutators::Mutators;
 
 // free search - gen and save images
 // randomly traverse the:
@@ -11,4 +12,8 @@ use crate::ff_repository::preset_service::PresetService;
 
 pub(crate) struct StarshipEnterprise {
     // - TODO:
+}
+
+impl StarshipEnterprise {
+    
 }

@@ -3,13 +3,19 @@ use ndarray::{arr2, Array2};
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
-#[derive(Debug)]
+#[derive(Deserialize, Debug)]
+pub(crate) struct AffineIfs {
+    pub name: String,
+    pub transforms: Vec<AffineTransform>,
+}
+
+#[derive(Debug, Clone)]
 pub(crate) struct AffineTransform {
     pub mat: AffineMat,
     pub p: f32,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub(crate) struct AffineMat {
     base: Array2<f32>
 }
@@ -103,10 +109,4 @@ impl<'de> Deserialize<'de> for AffineTransform {
 
         return deserializer.deserialize_map(AffineTransformVisitor);
     }
-}
-
-#[derive(Deserialize, Debug)]
-pub(crate) struct AffineIfs {
-    pub name: String,
-    pub transforms: Vec<AffineTransform>,
 }

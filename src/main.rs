@@ -11,7 +11,7 @@ mod usecase;
 
 use std::time::Instant;
 
-use ff_repository::preset_service::PresetService;
+use ff_repository::presets_repository::PresetsRepository;
 use statistics::grid_density::DensityEstimator2D;
 
 use chaos_game::ChaosGame;
@@ -34,7 +34,7 @@ fn main() {
     }
     let ifs_presets_json_path = &args[1];
     // - TODO: erase before commit.
-    let presets = PresetService::load(ifs_presets_json_path)
+    let presets = PresetsRepository::load(ifs_presets_json_path)
         .expect("DB not found.");
     let ifs = presets.find_ifs_by(IFS_NAME).expect(&format!("Couldn't find {IFS_NAME}"));
     let mut chaos_game = ChaosGame::new();
@@ -48,7 +48,7 @@ fn main() {
             MutatorConfig::new(1.0, Mutators::Julian { power: 5.0, dist: 0.31 }),
             MutatorConfig::new(1.0, Mutators::RadianBlur { angle: 1.27, v36: -5.5 })
         ]),
-        10_000_000
+        1000_000
     );
 
     let density = DensityEstimator2D::from(sample.as_slice()).histogram(1024, 1024);
