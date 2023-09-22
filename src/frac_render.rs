@@ -16,8 +16,8 @@ impl RgbRenderer {
         let height = array.height();
         let log_max = Self::find_log_max(array);
 
-        let avg: f32 = 0.0;
-        let avg_sq: f32 = 0.0;
+        let mut avg: f32 = 0.0;
+        let mut avg_sq: f32 = 0.0;
         let mut cnt: f32 = 0.0;
 
         //let cdf = Self::smoothed_cdf(array, log_max, &alpha_range);
@@ -28,12 +28,14 @@ impl RgbRenderer {
                 let color = if density_val > f32::EPSILON {
                     let alpha = Self::density_to_alpha(density_val, log_max);
 
+                    avg += alpha;
+                    avg_sq += alpha*alpha;
                     cnt += 1.0;
                     Rgba::from([
-                        (27.0 + 27.0 * alpha).round() as u8,
-                        (127.0 + 127.0 * alpha).round() as u8,
-                        0,
-                        255
+                        255,
+                        255,//(127.0 + 27.0 * alpha).round() as u8,
+                        255,
+                        (255.0 * alpha).round() as u8
                     ])
                 } else {
                     Rgba::from([0; 4])
@@ -93,10 +95,10 @@ impl RgbRenderer {
                     cnt += 1.0;
                     //println!("{}", alpha);
                     Rgba::from([
-                        (27.0 + 27.0 * alpha).round() as u8,
-                        (127.0 + 127.0 * alpha).round() as u8,
-                        0,
-                        255
+                        255,
+                        255,//(127.0 + 27.0 * alpha).round() as u8,
+                        255,
+                        (255.0 * alpha).round() as u8
                          ])
                 } else {
                     Rgba::from([0; 4])
@@ -157,8 +159,28 @@ impl RgbRenderer {
     }
 
     fn density_to_alpha(density: f32, log_max: f32)-> f32 {
-        let logged = -1.0*(density).log10();
-        logged / log_max
+        Self::log(density) / log_max
+    }
+
+    fn find_log_max(array: &Array2D) -> f32 {
+        let mut log_max = 0.0;
+        for x in 0..array.width() {
+            for y in 0..array.height() {
+                let density = array[Index2D::from(x, y)];
+
+                if density > f32::EPSILON {
+                    log_max = Self::log(density).max(log_max);
+                }
+            }
+        }
+
+        println!("Log-max: {log_max}");
+        log_max
+    }
+
+    #[inline(always)]
+    fn log(density: f32) -> f32 {
+        -1.0*(((1.0 - density).max(f32::EPSILON)).log10())
     }
 
     fn pdf(array: &Array2D, log_max: f32, alpha_range: &RangeInclusive<f32>) -> [f32; Self::LUM_LEVELS] {
@@ -207,22 +229,5 @@ impl RgbRenderer {
 
     fn bin_idx(lum: f32, lum_range: &RangeInclusive<f32>) -> usize {
         util::remap(lum, lum_range, &(0.0..=Self::LUM_LEVELS as f32 - 1.0)).round() as usize
-    }
-
-    fn find_log_max(array: &Array2D) -> f32 {
-        let mut log_max = 0.0;
-        for x in 0..array.width() {
-            for y in 0..array.height() {
-                let elem = array[Index2D::from(x, y)];
-
-                assert!(elem >= 0.0);
-                if elem > f32::EPSILON {
-                    log_max = (-1.0*(elem.log10())).max(log_max);
-                }
-            }
-        }
-
-        println!("Log-max: {log_max}");
-        log_max
     }
 }

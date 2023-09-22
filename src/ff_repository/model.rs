@@ -1,11 +1,45 @@
+use std::ops::Deref;
 use ndarray::{arr2, Array2};
 use serde::de::Visitor;
 use serde::{Deserialize, Deserializer};
 
 #[derive(Debug)]
 pub(crate) struct AffineTransform {
-    pub mat: Array2<f32>,
+    pub mat: AffineMat,
     pub p: f32,
+}
+
+#[derive(Debug)]
+pub(crate) struct AffineMat {
+    base: Array2<f32>
+}
+
+impl AffineMat {
+    pub(crate) fn from(mat: Array2<f32>) -> Self {
+        assert_eq!(mat.len(), 6);
+        Self { base: mat }
+    }
+
+    #[inline(always)]
+    pub(crate) fn a(&self) -> f32 { self.base[[0,0]] }
+    #[inline(always)]
+    pub(crate) fn b(&self) -> f32 { self.base[[0,1]] }
+    #[inline(always)]
+    pub(crate) fn c(&self) -> f32 { self.base[[0,2]] }
+    #[inline(always)]
+    pub(crate) fn d(&self) -> f32 { self.base[[1,0]] }
+    #[inline(always)]
+    pub(crate) fn e(&self) -> f32 { self.base[[1,1]] }
+    #[inline(always)]
+    pub(crate) fn f(&self) -> f32 { self.base[[1,2]] }
+}
+
+impl Deref for AffineMat {
+    type Target = Array2<f32>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.base
+    }
 }
 
 impl<'de> Deserialize<'de> for AffineTransform {
@@ -61,7 +95,7 @@ impl<'de> Deserialize<'de> for AffineTransform {
                 let p = p.ok_or_else(|| serde::de::Error::missing_field("p"))?;
 
                 return Ok(AffineTransform {
-                    mat: arr2(&[[a, b, c], [d, e, f]]),
+                    mat: AffineMat::from(arr2(&[[a, b, c], [d, e, f]])),
                     p: p,
                 });
             }

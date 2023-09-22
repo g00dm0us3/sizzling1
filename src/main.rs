@@ -27,6 +27,7 @@ use std::process::exit;
 fn main() {
     let args: Vec<String> = env::args().collect();
 
+    const IFS_NAME: &str = "Serpinski carpet";
     if args.len() < 2 {
         eprintln!("Path to IFS presets not set!");
         exit(-2);
@@ -35,18 +36,24 @@ fn main() {
     // - TODO: erase before commit.
     let presets = PresetService::load(ifs_presets_json_path)
         .expect("DB not found.");
-    let ifs = presets.find_ifs_by("Barnsley fern").expect("Couldn't find Barnsley");
+    let ifs = presets.find_ifs_by(IFS_NAME).expect(&format!("Couldn't find {IFS_NAME}"));
     let mut chaos_game = ChaosGame::new();
 
     let now = Instant::now();
     let sample = chaos_game.run_chaos_game(
         ifs,
-        Some(&[MutatorConfig::new(1.0, Mutators::Swirl)]),
-        100_000
+        Some(&[
+            MutatorConfig::new(1.0, Mutators::Disc),
+            MutatorConfig::new(1.0, Mutators::Bent),
+            MutatorConfig::new(1.0, Mutators::Julian { power: 5.0, dist: 0.31 }),
+            MutatorConfig::new(1.0, Mutators::RadianBlur { angle: 1.27, v36: -5.5 })
+        ]),
+        10_000_000
     );
 
-    let density = DensityEstimator2D::from(sample.as_slice()).histogram(256, 256);
+    let density = DensityEstimator2D::from(sample.as_slice()).histogram(1024, 1024);
 
+    //let density = DensityEstimator2D::from(sample.as_slice()).kde_adapt(1024, 1024);
     /*let mut integral = 0.0;
 
     for x in 0..density.width() {
@@ -60,9 +67,10 @@ fn main() {
 
     let img = RgbRenderer::img_bw_simple(&density);
 
+    //let img = RgbRenderer::img_bw_(&density);
     let elapsed = now.elapsed();
 
-    img.save("Barnsley fern.png").unwrap();
+    img.save(&format!("{IFS_NAME}.png")).unwrap();
 
     println!("Generated {}x{} image in {} (s)", density.width(), density.height(), elapsed.as_secs_f32());
 }

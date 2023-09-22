@@ -1,5 +1,5 @@
 use std::ops::{RangeInclusive, Sub, Deref};
-use ndarray::{Array1, arr1};
+use ndarray::{Array1, Array2, arr1};
 
 
 #[derive(Clone)]
@@ -12,7 +12,14 @@ pub(crate) struct Point {
 
 impl Point {
     pub(crate) fn new(x: f32, y: f32) ->  Self {
-        Self { base: arr1(&[x, y]), x: x, y: y }
+        Self { base: arr1(&[x, y, 1.0]), x: x, y: y }
+    }
+    pub(crate) fn zero() -> Self { Self { base: arr1(&[0.0, 0.0, 1.0]), x: 0.0, y: 0.0 } }
+
+    pub(crate) fn mul(&mut self, mat: &Array2<f32>) {
+        self.base = mat.dot(&self.base);
+        self.x = self.base[0];
+        self.y = self.base[1];
     }
 }
 
@@ -56,6 +63,8 @@ pub(crate) fn remap(val: f32, old_range: &RangeInclusive<f32>, new_range: &Range
 
 #[cfg(test)]
 mod test {
+    use ndarray::Array;
+    use crate::util::Point;
     use super::remap;
 
     #[test]
@@ -63,5 +72,13 @@ mod test {
         let res = remap(0.5, &(0.0..=1.0), &(0.0..=255.0));
 
         assert_eq!(res, 127.5);
+    }
+
+    #[test]
+    fn test_point_mul() {
+        let affine_mat: ndarray::Array2<f32> = ndarray::arr2(&[[1.0, 0.0, 1.0], [0.0, 0.0, 1.0]]);
+        let mut vec = Point::zero();
+
+        vec.mul(&affine_mat);
     }
 }

@@ -2,6 +2,7 @@ mod mutator_lib;
 
 use std::ops::RangeInclusive;
 use crate::{util::Point, modnar::Modnar};
+use crate::ff_repository::model::AffineMat;
 use crate::mutators::mutator_lib::{bent, blob, cosine, diamond, disc, ex, exponential, fan, fisheye, handkerchief, heart, horseshoe, hyperbolic, julia, polar, popcorn, power, rings, sinus, spherical, spiral, swirl, waves, pdj, fan2, rings2, eyefish, bubble, cylinder, perspective, noise, julian, julias, blur, gaussian, radian_blur, pie, ngon, curl, rectangles, arch, tangent, square, rays, blade, secant, twintrian, cross};
 
 pub(crate) struct MutatorConfig{
@@ -18,10 +19,11 @@ impl MutatorConfig {
 pub(crate) fn apply_mutator_combination(
     mutators: &[MutatorConfig],
     point: &Point,
+    mat: &AffineMat,
     rnd: &mut Modnar
 ) -> Point {
-    mutators.iter().fold(Point::new(0.0, 0.0), |acc, mutator| {
-        let app_res = call(mutator.mutator, point, rnd);
+    mutators.iter().fold(Point::zero(), |acc, mutator| {
+        let app_res = call(mutator.mutator, point, mat, rnd);
 
        Point::new(
            // - TODO: eh, operator overloading.
@@ -53,14 +55,14 @@ pub(crate) enum Mutators {
     Ex = 12,
     Julia = 13,
     Bent = 14,
-    Waves { b: f32, c: f32, e: f32, f: f32 } = 15,
+    Waves = 15,
     Fisheye = 16,
-    Popcorn { c: f32, f: f32} = 17,
+    Popcorn = 17,
     Exponential = 18,
     Power = 19,
     Cosine = 20,
-    Rings { c: f32 } = 21,
-    Fan { c: f32, f: f32 } = 22,
+    Rings = 21,
+    Fan = 22,
     Blob { blob_h: f32, blob_l: f32, blob_waves: f32 } = 23,
     Pdj { pdj_a: f32, pdj_b: f32, pdj_c: f32, pdj_d: f32 } = 24,
     Fan2 { fx: f32, fy: f32 } = 25,
@@ -92,6 +94,7 @@ pub(crate) enum Mutators {
 fn call(
     mutator: Mutators,
     p: &Point,
+    mat: &AffineMat,
     rnd: &mut Modnar
 ) -> Point {
     match mutator {
@@ -109,14 +112,15 @@ fn call(
         Mutators::Ex => ex(p),
         Mutators::Julia => julia(p, rnd),
         Mutators::Bent => bent(p),
-        Mutators::Waves { b, c, e, f }=> waves(p, b, c, e, f),
+        // - TODO: mutators, dependent on transform applied. has something to it.
+        Mutators::Waves => waves(p, mat.b(), mat.c(), mat.e(), mat.f()),
         Mutators::Fisheye => fisheye(p),
-        Mutators::Popcorn { c, f } => popcorn(p, c, f),
+        Mutators::Popcorn => popcorn(p, mat.c(), mat.f()),
         Mutators::Exponential => exponential(p),
         Mutators::Power => power(p),
         Mutators::Cosine => cosine(p),
-        Mutators::Rings { c } => rings(p,c),
-        Mutators::Fan { c, f } => fan(p, c, f),
+        Mutators::Rings => rings(p, mat.c()),
+        Mutators::Fan => fan(p, mat.c(), mat.f()),
         Mutators::Blob { blob_h, blob_l, blob_waves } => blob(p, blob_h, blob_l, blob_waves),
         Mutators::Pdj { pdj_a, pdj_b, pdj_c, pdj_d } => pdj(p, pdj_a, pdj_b, pdj_c, pdj_d),
         Mutators::Fan2 { fx, fy } => fan2(p, fx, fy),

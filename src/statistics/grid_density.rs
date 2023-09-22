@@ -29,6 +29,8 @@ impl DensityEstimator2D {
             let remapped_y = remap(sample[Axis::y], self.samples.region().y_range(), &grid_y_range);
 
             let index = Index2D::from(remapped_x.round() as usize, remapped_y.round() as usize);
+
+            // - TODO: normalize after
             res[index] += 1.0 / (self.samples.len() as f32);
         }
 

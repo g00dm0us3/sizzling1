@@ -1,4 +1,5 @@
 use std::ops::{Index, IndexMut};
+use std::slice::IterMut;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub(crate) struct MultiIndex<const N: usize> {
