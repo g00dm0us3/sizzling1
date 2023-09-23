@@ -13,8 +13,8 @@ impl PresetsRepository {
         // - TODO: how to forward error btw maps?
         match JsonHelper::read_db(db_path) {
             Ok(json) => {
-                JsonHelper::parse_data(&json)
-                    .map(|parse_result: Vec<AffineIfs>| {
+                JsonHelper::parse_data::<Vec<AffineIfs>>(&json)
+                    .map(|parse_result| {
                         let mut self_ = Self {
                             affine_presets: parse_result,
                             flatted: Vec::<AffineTransform>::new()

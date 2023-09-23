@@ -1,9 +1,12 @@
 use crate::alg::big_range_random_cursor::BigRangeRandomCursor;
+use crate::alg::combinations::Combinations;
 use crate::ff_repository::presets_repository::PresetsRepository;
 use crate::mutators::Mutators;
 use crate::ff_repository::mutator_description_service::{MutatorDescription, MutatorDescriptionService};
 use crate::modnar::Modnar;
+use crate::modnar::rnd_vec::RndVec;
 use crate::mutators::Mutators::{Arch, Bent, Blade, Blob, Blur, Bubble, Cosine, Cross, Curl, Cylinder, Diamond, Disc, Ex, Exponential, Eyefish, Fan, Fan2, Fisheye, Gaussian, Handkerchief, Heart, Horseshoe, Hyperbolic, Julia, Julian, Julias, Ngon, Noise, Pdj, Perspective, Pie, Polar, Popcorn, Power, RadianBlur, Rays, Rectangles, Rings, Rings2, Secant, Sinus, Spherical, Spiral, Square, Swirl, Tangent, Twintrian, Waves};
+use crate::util::VecRemove;
 
 // free search - gen and save images
 // randomly traverse the:
@@ -22,7 +25,51 @@ pub(crate) struct StarshipEnterprise<'a> {
 }
 
 impl<'a> StarshipEnterprise<'a> {
+    pub(crate) fn new(
+        presets: &'a PresetsRepository,
+        mutators: &'a MutatorDescriptionService
+    ) -> Self {
+        Self {
+            presets_repository: presets,
+            mutators: mutators,
+            mutators_range_cur: BigRangeRandomCursor::new(1..=mutators.as_ref().len() as u64, &[]),
+            presets_range_cur: BigRangeRandomCursor::new(1..=presets.flatted.len().max(4) as u64, &[]),
+            rnd: Modnar::new_rng(),
+            lsfr: Modnar::new_lsfr(7)
+        }
+    }
 
+    pub(crate) fn roll_dice(
+        &mut self,
+        presets: &PresetsRepository,
+        mutators: &MutatorDescriptionService
+    ) {
+        let mut mutators_pockets = RndVec::<BigRangeRandomCursor>::new();
+        let mut presets_pockets = RndVec::<BigRangeRandomCursor>::new();
+
+        let mut comb = Combinations::new();
+
+        for i in 0..4 {
+            let combinations = comb.combinations(4, (i+1) as u8);
+            let rng_cursor = BigRangeRandomCursor::new_clean(1..=combinations);
+            presets_pockets.push(rng_cursor)
+        }
+
+        for i in 0..mutators.as_ref().len() {
+            let combinations = comb.combinations(mutators.as_ref().len() as u8, (i+1) as u8);
+            let rng_cursor = BigRangeRandomCursor::new_clean(1..=combinations);
+            presets_pockets.push(rng_cursor)
+        }
+        while (!presets_pockets.is_empty()) {
+            presets_pockets.retain(|e| !e.is_empty());
+
+            if presets_pockets.is_empty() {}
+
+            let selected_pocket = presets_pockets.select();
+
+
+        }
+    }
 }
 
 impl MutatorDescription {
@@ -83,7 +130,7 @@ impl MutatorDescription {
 
 #[cfg(test)]
 mod tests {
-    use crate::ff_repository::mutator_description_service::{MutatorDescription, MutatorDescriptionService};
+    use crate::ff_repository::mutator_description_service::MutatorDescriptionService;
 
     #[test]
     fn test_conversion() {

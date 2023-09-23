@@ -6,8 +6,8 @@ mod util;
 mod ds;
 mod frac_render;
 mod mutators;
-mod modnar;
 mod usecase;
+mod modnar;
 
 use std::time::Instant;
 
@@ -23,7 +23,6 @@ use std::process::exit;
 use crate::ff_repository::mutator_description_service::{MutatorDescriptionService};
 
 // grids, which are too small don't yield detailed results (all samples endup in the same bins)
-// - TODO: quad-tree to grid?
 // - TODO: supersampling should probably be a thing.
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -49,15 +48,15 @@ fn main() {
     let sample = chaos_game.run_chaos_game(
         ifs,
         Some(&[
-            MutatorConfig::new(1.0, Mutators::Disc),
-            MutatorConfig::new(1.0, Mutators::Bent),
-            MutatorConfig::new(1.0, Mutators::Julian { power: 5.0, dist: 0.31 }),
-            MutatorConfig::new(1.0, Mutators::RadianBlur { angle: 1.27, v36: -5.5 })
+            MutatorConfig::new(0.25, Mutators::Disc),
+            MutatorConfig::new(0.25, Mutators::Bent),
+            MutatorConfig::new(0.25, Mutators::Julian { power: 5.0, dist: 0.31 }),
+            MutatorConfig::new(0.25, Mutators::RadianBlur { angle: 1.27, v36: -5.5 })
         ]),
-        1000_000
+        200_000
     );
 
-    let density = DensityEstimator2D::from(sample.as_slice()).histogram(1024, 1024);
+    let density = DensityEstimator2D::from(sample.as_slice()).histogram(256, 256);
 
     //let density = DensityEstimator2D::from(sample.as_slice()).kde_adapt(1024, 1024);
     /*let mut integral = 0.0;

@@ -1,6 +1,15 @@
 use std::ops::{RangeInclusive, Sub, Deref};
 use ndarray::{Array1, Array2, arr1};
 
+pub(crate) trait VecRemove<T> where T: Eq {
+    fn remove_elem(&mut self, elem: &T);
+}
+
+impl<T> VecRemove<T> for Vec<T> where T: Eq {
+    fn remove_elem(&mut self, elem: &T) {
+        self.retain(|e| *e != *elem)
+    }
+}
 
 #[derive(Clone)]
 pub(crate) struct Point {

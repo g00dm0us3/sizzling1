@@ -1,5 +1,6 @@
-use crate::{util::Point, modnar::Modnar};
+use crate::util::Point;
 use std::ops::Deref;
+use crate::modnar::Modnar;
 
 
 impl Point {

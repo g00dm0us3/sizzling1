@@ -1,11 +1,16 @@
 use std::{collections::HashMap, ops::RangeInclusive};
+use std::collections::hash_map::DefaultHasher;
+use std::hash::Hasher;
 use crate::modnar::Modnar;
 // - TODO: integrate w. range inclusive.
 // - TODO: should be serializable.
 
 /// Goes through a big range (max from 0 to 2^64 - 1), at random
 /// without repetition.
+
+#[derive(Default)]
 pub(crate) struct BigRangeRandomCursor {
+    hash: u64,
     lower_bound: u64,
     upper_bound: u64,
     generated_count: u64,
@@ -13,9 +18,26 @@ pub(crate) struct BigRangeRandomCursor {
     rand: Modnar
 }
 
+impl PartialEq<Self> for BigRangeRandomCursor {
+    fn eq(&self, other: &Self) -> bool {
+        self.hash == other.hash
+    }
+}
+
+impl Eq for BigRangeRandomCursor {}
+
 impl BigRangeRandomCursor {
+    pub(crate) fn new_clean(range: RangeInclusive<u64>) -> Self {
+        Self::new(range, &[])
+    }
     pub(crate) fn new(range: RangeInclusive<u64>, preexisting: &[u64]) -> Self {
-        let mut this = Self { 
+        let mut hasher = DefaultHasher::new();
+
+        hasher.write_u64(*range.start());
+        hasher.write_u64(*range.end());
+
+        let mut this = Self {
+            hash: hasher.finish(),
             lower_bound: *range.start(),
             upper_bound: *range.end(),
             generated_count: 0,
@@ -36,12 +58,11 @@ impl BigRangeRandomCursor {
 
     fn next(&mut self) -> Option<u64> {
         let rng_number = self.rand.gen(self.lower_bound..=self.upper_bound);
-        // - TODO: use frand here
         self.next_(rng_number)
     }
 
     fn next_(&mut self, rng_number: u64) -> Option<u64> {
-        if self.lower_bound > self.upper_bound {
+        if self.is_empty() {
             return None;
         }
 
@@ -82,6 +103,8 @@ impl BigRangeRandomCursor {
         self.lower_bound += 1;
         return Some(result)
     }
+
+    pub(crate) fn is_empty(&self) -> bool { self.lower_bound >= self.upper_bound }
 }
 
 pub(crate) struct IterMut<'a> {

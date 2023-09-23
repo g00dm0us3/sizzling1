@@ -12,7 +12,7 @@ impl Combinations {
     pub(crate) fn new() -> Self { Self { cache: vec![0; Self::CACHE_SIZE] } }
 
     // - TODO: get rid of mut.
-    fn combinations(&mut self, n: u8, k: u8) -> u64 {
+    pub(crate) fn combinations(&mut self, n: u8, k: u8) -> u64 {
         if n == k { return 1; }
         if n < k { return 0; }
 

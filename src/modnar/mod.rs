@@ -1,9 +1,20 @@
 use std::ops::RangeInclusive;
 use crate::util::Len;
 
-pub(crate) struct Modnar {
+pub(crate) mod rnd_vec;
+
+pub struct Modnar {
     seed: u64,
     generator: fn(&mut Self) -> u64
+}
+
+impl Default for Modnar {
+    fn default() -> Self {
+        Self {
+            seed: 0,
+            generator: dummy,
+        }
+    }
 }
 
 impl Modnar {
@@ -27,6 +38,10 @@ impl Modnar {
     fn gen_f64(&mut self) -> f64 {
         f64::from_bits((self.generator)(self) >> 12 | 0x3ff0000000000000) - 1.0
     }
+}
+
+fn dummy(r: &mut Modnar) -> u64 {
+    panic!("Using unimplemented modnar!")
 }
 
 fn lsfr_(r: &mut Modnar) -> u64 {
@@ -123,10 +138,10 @@ const BYTE_FEEDBACK: [u64; 256] = [
     0xcc0000000000000b, 0x0b00000000000000, 0x4200000000000006, 0x850000000000000d,
     0xe800000000000008, 0x2f00000000000003, 0x6600000000000005, 0xa10000000000000e,
     0xf400000000000009, 0x3300000000000002, 0x7a00000000000004, 0xbd0000000000000f,
-  ];
+];
 
-  #[cfg(test)]
-  mod tests {
+#[cfg(test)]
+mod tests {
     use super::{Modnar, random_seed_};
     use std::collections::HashMap;
 
@@ -151,7 +166,7 @@ const BYTE_FEEDBACK: [u64; 256] = [
             // Bucket width is the 2^64 / (input range).
             // 1..10 -> 1..5
             // 1 , 2 , 3 , 4 , 5 , 6 , 7 , 8 , 9 , 10
-            //   1 |   2   |   3   |   4   |   5   | 
+            //   1 |   2   |   3   |   4   |   5   |
             // Now why do we need lsfr?
         }
     }
@@ -185,33 +200,33 @@ const BYTE_FEEDBACK: [u64; 256] = [
         assert!(counter_eq < 10);
     }
 
-  #[test]
-  fn test_rng_f32() {
-      let mut rng1 = Modnar::new_rng();
-      let mut rng2 = Modnar::new_rng();
+    #[test]
+    fn test_rng_f32() {
+        let mut rng1 = Modnar::new_rng();
+        let mut rng2 = Modnar::new_rng();
 
-      let mut vec1 = Vec::<f32>::new();
-      let mut vec2 = Vec::<f32>::new();
+        let mut vec1 = Vec::<f32>::new();
+        let mut vec2 = Vec::<f32>::new();
 
-      for _ in 0..100 {
-          vec1.push(rng1.gen_f32());
-          vec2.push(rng2.gen_f32());
-      }
+        for _ in 0..100 {
+            vec1.push(rng1.gen_f32());
+            vec2.push(rng2.gen_f32());
+        }
 
-      let mut counter_eq = 0;
-      for it in vec1.iter().zip(vec2.iter()) {
-          let (ai, bi) = it;
-          assert!(*ai >= 0.0 && *ai <= 1.0);
-          assert!(*bi >= 0.0 && *bi <= 1.0);
+        let mut counter_eq = 0;
+        for it in vec1.iter().zip(vec2.iter()) {
+            let (ai, bi) = it;
+            assert!(*ai >= 0.0 && *ai <= 1.0);
+            assert!(*bi >= 0.0 && *bi <= 1.0);
 
-          counter_eq += if *ai == *bi {
-              1
-          } else {
-              0
-          }
-      }
+            counter_eq += if *ai == *bi {
+                1
+            } else {
+                0
+            }
+        }
 
-      assert!(counter_eq < 10);
-  }
+        assert!(counter_eq < 10);
+    }
 
-  }
+}
