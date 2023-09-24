@@ -1,12 +1,17 @@
+use std::cmp::Ordering;
+use std::collections::HashSet;
+use std::ops::Deref;
+use std::time::Instant;
 use crate::alg::big_range_random_cursor::BigRangeRandomCursor;
 use crate::alg::combinations::Combinations;
+use crate::chaos_game::ChaosGame;
+use crate::ff_repository::affine_transform::{AffineMat, AffineTransform};
 use crate::ff_repository::presets_repository::PresetsRepository;
 use crate::mutators::Mutators;
 use crate::ff_repository::mutator_description_service::{MutatorDescription, MutatorDescriptionService};
-use crate::modnar::Modnar;
-use crate::modnar::rnd_vec::RndVec;
+use crate::frac_render::RgbRenderer;
 use crate::mutators::Mutators::{Arch, Bent, Blade, Blob, Blur, Bubble, Cosine, Cross, Curl, Cylinder, Diamond, Disc, Ex, Exponential, Eyefish, Fan, Fan2, Fisheye, Gaussian, Handkerchief, Heart, Horseshoe, Hyperbolic, Julia, Julian, Julias, Ngon, Noise, Pdj, Perspective, Pie, Polar, Popcorn, Power, RadianBlur, Rays, Rectangles, Rings, Rings2, Secant, Sinus, Spherical, Spiral, Square, Swirl, Tangent, Twintrian, Waves};
-use crate::util::VecRemove;
+use crate::statistics::grid_density::DensityEstimator2D;
 
 // free search - gen and save images
 // randomly traverse the:
@@ -20,8 +25,8 @@ pub(crate) struct StarshipEnterprise<'a> {
     mutators: &'a MutatorDescriptionService,
     mutators_range_cur: BigRangeRandomCursor,
     presets_range_cur: BigRangeRandomCursor,
-    rnd: Modnar,
-    lsfr: Modnar
+    chaos_game: ChaosGame,
+    combinations: Combinations
 }
 
 impl<'a> StarshipEnterprise<'a> {
@@ -29,45 +34,120 @@ impl<'a> StarshipEnterprise<'a> {
         presets: &'a PresetsRepository,
         mutators: &'a MutatorDescriptionService
     ) -> Self {
+        let mut combinations = Combinations::new();
+        let total_presets_comp = combinations.combinations(presets.flatted.len() as u8, 4);
+        println!("Total combinations {total_presets_comp}");
         Self {
             presets_repository: presets,
-            mutators: mutators,
-            mutators_range_cur: BigRangeRandomCursor::new(1..=mutators.as_ref().len() as u64, &[]),
-            presets_range_cur: BigRangeRandomCursor::new(1..=presets.flatted.len().max(4) as u64, &[]),
-            rnd: Modnar::new_rng(),
-            lsfr: Modnar::new_lsfr(7)
+            mutators,
+            // - TODO: range over total number of combinations from n by k.
+            mutators_range_cur: BigRangeRandomCursor::new_clean(1..=mutators.as_ref().len() as u64),
+            presets_range_cur: BigRangeRandomCursor::new_clean(1..=total_presets_comp),
+            chaos_game: ChaosGame::new(),
+            combinations: Combinations::new()
         }
     }
 
-    pub(crate) fn roll_dice(
+    pub(crate) fn roll_dice_presets(
         &mut self,
-        presets: &PresetsRepository,
-        mutators: &MutatorDescriptionService
+        path_to_samples: &str,
+        total_img: u16
     ) {
-        let mut mutators_pockets = RndVec::<BigRangeRandomCursor>::new();
-        let mut presets_pockets = RndVec::<BigRangeRandomCursor>::new();
+        let mut img_generated = 0u16;
+        let mut discarded = 0u16;
+        while img_generated < total_img {
+            if let Some(perm_rank) = self.presets_range_cur.next() {
+                //println!("Discarded {discarded}");
+                let comb: HashSet<usize> = self.combinations
+                    .unrank(perm_rank, self.presets_repository.flatted.len() as u8, 4)
+                    .into_iter()
+                    .map(|e| (e - 1) as usize)
+                    .collect();
 
-        let mut comb = Combinations::new();
+                let mut ifs: Vec<AffineTransform> = self.presets_repository
+                    .flatted
+                    .iter()
+                    .enumerate()
+                    .map(|e| {
+                        if comb.contains(&e.0) {
+                            Some(e.1.clone())
+                        } else {
+                            None
+                        }
+                    })
+                    .flatten()
+                    .collect();
 
-        for i in 0..4 {
-            let combinations = comb.combinations(4, (i+1) as u8);
-            let rng_cursor = BigRangeRandomCursor::new_clean(1..=combinations);
-            presets_pockets.push(rng_cursor)
+                Self::sort_ifs(&mut ifs);
+                Self::set_cumulative_probs(&mut ifs);
+
+
+                if self.chaos_game.run_convergence_test(&ifs, None) {
+
+                    let now = Instant::now();
+                    let samples = self
+                        .chaos_game
+                        .run_chaos_game(&ifs, None, 400_000);
+                    let density = DensityEstimator2D::new(&samples).histogram(256, 256);
+
+                    let elapsed = now.elapsed();
+                    println!("Compute density in {}", elapsed.as_secs_f32());
+
+                    let min_fill = 0.1 * 256.0 * 256.0 as f32;
+
+                    if (density.non_zero_count() as f32) < min_fill {
+                        discarded += 1;
+                        continue;
+                    }
+
+                    let img = RgbRenderer::img_bw_simple(&density);
+
+                    img.save(&format!("{path_to_samples}\\{perm_rank}.png")).unwrap();
+
+                    img_generated += 1;
+                    println!("Presets {img_generated} out of {total_img}");
+                } else {
+                    discarded += 1;
+                }
+
+                continue
+            }
+        }
+    }
+
+    fn sort_ifs(ifs: &mut Vec<AffineTransform>) {
+        // - TODO: welp this pretty much erodes our need for dependency on ndarray
+        fn det(mat: &AffineMat) -> f32 {
+            mat[[0,0]]*mat[[1,1]] - mat[[0,1]]*mat[[1,0]]
         }
 
-        for i in 0..mutators.as_ref().len() {
-            let combinations = comb.combinations(mutators.as_ref().len() as u8, (i+1) as u8);
-            let rng_cursor = BigRangeRandomCursor::new_clean(1..=combinations);
-            presets_pockets.push(rng_cursor)
-        }
-        while (!presets_pockets.is_empty()) {
-            presets_pockets.retain(|e| !e.is_empty());
+        let total_det: f32 = ifs
+            .iter()
+            .map(|e| { return det(&e.mat).abs() })
+            .sum();
 
-            if presets_pockets.is_empty() {}
+        ifs.iter_mut().for_each(|t| {
+            t.p = det(&t.mat).abs()/total_det;
+        });
+        ifs.sort_by(|rhs, lhs| {
+            return if rhs.p > lhs.p {
+                Ordering::Greater
+            } else {
+                Ordering::Less
+            };
+        });
+    }
 
-            let selected_pocket = presets_pockets.select();
+    fn set_cumulative_probs(ifs: &mut Vec<AffineTransform>) {
+        let mut cum_prob = 0.0;
 
+        // - TODO: is there an idiom for this??
+        let last_idx = ifs.len() - 1;
+        for (idx, transform) in ifs.iter_mut().enumerate() {
+            cum_prob += transform.p;
+            transform.p = cum_prob;
 
+            if idx == last_idx { transform.p = 1.0; }
         }
     }
 }

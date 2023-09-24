@@ -10,7 +10,7 @@ pub(crate) struct DensityEstimator2D {
 }
 
 impl DensityEstimator2D {
-    pub(crate) fn from(data: &[f32]) -> Self {
+    pub(crate) fn new(data: &[f32]) -> Self {
         Self { samples: BivariateSample::from(data) }
     }
 }
@@ -65,6 +65,9 @@ impl DensityEstimator2D {
     }
 
     fn kde<F>(&self, width: usize, height: usize, get_h: F) -> Array2D where F: Fn(&RandomVec2D)->f32 {
+        fn distance(sample: f32, grid_point: f32, h: f32) -> f32 { (sample - grid_point).abs() / h }
+        fn epanechnikov_krnl(u: f32) -> f32 { (3.0/4.0 *(1.0 - u*u)).max(0.0) }
+
         let mut res = Array2D::new(width, height);
 
         let grid_x_range = 0.0..=((width as f32) - 1.0);
@@ -98,8 +101,8 @@ impl DensityEstimator2D {
             let normalization_c = 1.0 / (self.samples.len() as f32 * h * h);
 
             coords[0..cell_count].iter().for_each(|int_sample| {
-                let kernel_val_x = Self::epanechnikov_kernel(Self::distance(remapped_x, int_sample.x() as f32, h));
-                let kernel_val_y = Self::epanechnikov_kernel(Self::distance(remapped_y, int_sample.y() as f32, h));
+                let kernel_val_x = epanechnikov_krnl(distance(remapped_x, int_sample.x() as f32, h));
+                let kernel_val_y = epanechnikov_krnl(distance(remapped_y, int_sample.y() as f32, h));
 
                 let increment = normalization_c * kernel_val_x * kernel_val_y;
                 res[*int_sample] += increment;
@@ -109,13 +112,10 @@ impl DensityEstimator2D {
         res
     }
 
-    #[inline]
-    fn distance(sample: f32, grid_point: f32, h: f32) -> f32 { (sample - grid_point).abs() / h }
-
     // For kernels with compact support (i.e. Epanechnikov)
     // will return all of the grid cells, which should be
     // incremented with a non-zero value.
-    // For kernels without compact support (i.e. Gaussian) - dunno (qqq-quad tree! hm?)
+    // For kernels without compact support (i.e. Gaussian) - dunno.
     fn cells_to_inc_around(
         remapped_s: RandomVec2D,
         h: f32,
@@ -123,13 +123,9 @@ impl DensityEstimator2D {
         range_x: &RangeInclusive<f32>,
         range_y: &RangeInclusive<f32>
     ) -> usize {
-        // - TODO: can we returns a contiguous memory run, which can then be iterated ??
-        // Perhaps Hilbert curve would do us some good - by selecting a range of x and y
-        // we can just get a contiguous (this is important) subsequence of the nodes?
-
         let h = h.ceil();
         // ceil - if we even touch some grid cell a little, we need to consider it.
-        let max_x = (remapped_s[Axis::x] + h).min(*range_x.end()).ceil() as usize; // f#^!ck typesafety
+        let max_x = (remapped_s[Axis::x] + h).min(*range_x.end()).ceil() as usize;
         let min_x = (remapped_s[Axis::x] - h).max(*range_x.start()).ceil() as usize;
         let max_y = (remapped_s[Axis::y] + h).min(*range_y.end()).ceil() as usize;
 
@@ -145,9 +141,6 @@ impl DensityEstimator2D {
 
         count
     }
-
-    #[inline]
-    fn epanechnikov_kernel(u: f32) -> f32 { (3.0/4.0 *(1.0 - u*u)).max(0.0) }
 }
 
 #[cfg(test)]

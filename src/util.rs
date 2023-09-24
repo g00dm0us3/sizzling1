@@ -21,14 +21,15 @@ pub(crate) struct Point {
 
 impl Point {
     pub(crate) fn new(x: f32, y: f32) ->  Self {
-        Self { base: arr1(&[x, y, 1.0]), x: x, y: y }
+        Self { base: arr1(&[x, y, 1.0]), x, y }
     }
     pub(crate) fn zero() -> Self { Self { base: arr1(&[0.0, 0.0, 1.0]), x: 0.0, y: 0.0 } }
 
     pub(crate) fn mul(&mut self, mat: &Array2<f32>) {
-        self.base = mat.dot(&self.base);
-        self.x = self.base[0];
-        self.y = self.base[1];
+        let mul_result = mat.dot(&self.base);
+        self.x = mul_result[0];
+        self.y = mul_result[1];
+        self.base = arr1(&[mul_result[0], mul_result[1], 1.0]);
     }
 
     pub(crate) fn dst_fast(&self, rhs: &Point) -> f32 {

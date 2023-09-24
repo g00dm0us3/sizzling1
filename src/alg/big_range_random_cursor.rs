@@ -56,7 +56,7 @@ impl BigRangeRandomCursor {
         return IterMut { cursor: self }
     }
 
-    fn next(&mut self) -> Option<u64> {
+    pub(crate) fn next(&mut self) -> Option<u64> {
         let rng_number = self.rand.gen(self.lower_bound..=self.upper_bound);
         self.next_(rng_number)
     }

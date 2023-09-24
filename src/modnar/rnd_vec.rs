@@ -8,6 +8,15 @@ pub struct RndVec<T> {
     rnd: RefCell<Modnar>
 }
 
+impl<T> From<Vec<T>> for RndVec<T> {
+    fn from(value: Vec<T>) -> Self {
+        Self {
+            base: value,
+            rnd: RefCell::new(Modnar::new_rng())
+        }
+    }
+}
+
 impl<T> RndVec<T> {
     pub fn new() -> Self {
         Self {
@@ -24,7 +33,7 @@ impl<T> RndVec<T> {
 
     pub fn select_mut(&mut self) -> &mut T {
         let rnd_rng = 0..=(self.base.len().wrapping_sub(1).max(0) as u64);
-        let rnd_idx = self.rnd.into_inner().gen(rnd_rng) as usize;
+        let rnd_idx = self.rnd.get_mut().gen(rnd_rng) as usize;
         &mut self.base[rnd_idx]
     }
 }

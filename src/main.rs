@@ -21,6 +21,7 @@ use crate::mutators::{MutatorConfig, Mutators};
 use std::env;
 use std::process::exit;
 use crate::ff_repository::mutator_description_service::{MutatorDescriptionService};
+use crate::usecase::starship_enterprise::StarshipEnterprise;
 
 // grids, which are too small don't yield detailed results (all samples endup in the same bins)
 // - TODO: supersampling should probably be a thing.
@@ -41,12 +42,14 @@ fn main() {
     let mut_desc = MutatorDescriptionService::load(mut_desc_json_path)
         .expect("Mutator descriptions not found!");
 
-    let ifs = presets.find_ifs_by(IFS_NAME).expect(&format!("Couldn't find {IFS_NAME}"));
+    let mut starship = StarshipEnterprise::new(&presets, &mut_desc);
+    starship.roll_dice_presets("", 500);
+    /*let ifs = presets.find_ifs_by(IFS_NAME).expect(&format!("Couldn't find {IFS_NAME}"));
     let mut chaos_game = ChaosGame::new();
 
     let now = Instant::now();
     let sample = chaos_game.run_chaos_game(
-        ifs,
+        &ifs,
         Some(&[
             MutatorConfig::new(0.25, Mutators::Disc),
             MutatorConfig::new(0.25, Mutators::Bent),
@@ -56,7 +59,7 @@ fn main() {
         200_000
     );
 
-    let density = DensityEstimator2D::from(sample.as_slice()).histogram(256, 256);
+    let density = DensityEstimator2D::new(sample.as_slice()).histogram(256, 256);
 
     //let density = DensityEstimator2D::from(sample.as_slice()).kde_adapt(1024, 1024);
     /*let mut integral = 0.0;
@@ -78,4 +81,5 @@ fn main() {
     img.save(&format!("{IFS_NAME}.png")).unwrap();
 
     println!("Generated {}x{} image in {} (s)", density.width(), density.height(), elapsed.as_secs_f32());
+     */
 }

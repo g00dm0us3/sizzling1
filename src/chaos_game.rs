@@ -1,26 +1,46 @@
 use std::ops::Deref;
-use crate::ff_repository::affine_transform::AffineIfs;
+use crate::ff_repository::affine_transform::{AffineIfs, AffineTransform};
 use crate::modnar::Modnar;
 use crate::mutators::{apply_mutator_combination, MutatorConfig};
 use crate::util::Point;
 
 pub(crate) struct ChaosGame {
-    rnd: Modnar
+    rnd: Modnar,
+    lsfr: Modnar
+}
+
+pub(crate) trait AffineTransformProvider {
+    fn find_transform(&self, prob: f32) -> Option<&AffineTransform>;
+}
+
+impl AffineTransformProvider for Vec<AffineTransform> {
+    fn find_transform(&self, prob: f32) -> Option<&AffineTransform> {
+        self.iter()
+            .find(|t| prob <= t.p)
+    }
+}
+
+impl AffineTransformProvider for &AffineIfs {
+    fn find_transform(&self, prob: f32) -> Option<&AffineTransform> {
+        self.transforms
+            .iter()
+            .find(|t| prob <= t.p)
+    }
 }
 
 impl ChaosGame {
     pub(crate) fn new() -> Self {
-        Self { rnd: Modnar::new_rng() }
+        Self { rnd: Modnar::new_rng(),lsfr:  Modnar::new_lsfr(7) }
     }
 
     pub(crate) fn run_chaos_game(
         &mut self,
-        affine_ifs: &AffineIfs,
+        aff_t_provider: &impl AffineTransformProvider,
         mutators: Option<&[MutatorConfig]>,
         iterations: u32
     ) -> Vec<f32> {
         let mut res = Vec::<f32>::new();
-        self.run_chaos_game_(affine_ifs, mutators, iterations, |point| {
+        self.run_chaos_game_(aff_t_provider, mutators, iterations, |point| {
             res.push(point.x);
             res.push(point.y);
         });
@@ -30,7 +50,7 @@ impl ChaosGame {
 
     fn run_chaos_game_<F>(
         &mut self,
-        affine_ifs: &AffineIfs,
+        aff_t_provider: &impl AffineTransformProvider,
         mutators: Option<&[MutatorConfig]>,
         iterations: u32,
         mut point_visitor: F
@@ -42,9 +62,8 @@ impl ChaosGame {
 
         for i in 1..=iterations {
             let r: f32 = self.rnd.gen_f32();
-            let transform = affine_ifs.transforms
-                .iter()
-                .find(|t| r <= t.p)
+            let transform = aff_t_provider
+                .find_transform(r)
                 .expect("Didn't find transform!");
 
             let mat = &transform.mat;
@@ -63,22 +82,21 @@ impl ChaosGame {
     }
     // - TODO: refactor.
     pub(crate) fn run_convergence_test(
-        rnd: &mut Modnar,
-        affine_ifs: &AffineIfs,
+        &mut self,
+        aff_t_provider: &impl AffineTransformProvider,
         mutators: Option<&[MutatorConfig]>
     ) -> bool {
-        let mut nw: Point = Point::new(-1.0, 1.0);
+        let mut nw = Point::new(-1.0, 1.0);
         let mut se = Point::new(1.0, -1.0);
 
         const ITERATIONS: u8 = 30;
 
         for i in 1..=ITERATIONS {
-            let r: f32 = rnd.gen_f32();
+            let r: f32 = self.lsfr.gen_f32();
 
             // select transform at random
-            let transform = affine_ifs.transforms
-                .iter()
-                .find(|t| r <= t.p)
+            let transform = aff_t_provider
+                .find_transform(r)
                 .expect("Didn't find transform!");
 
             let mat = &transform.mat;
@@ -86,8 +104,8 @@ impl ChaosGame {
             se.mul(mat.deref());
 
             if let Some(mutators) = mutators {
-                nw = apply_mutator_combination(mutators, &nw, mat, rnd);
-                se = apply_mutator_combination(mutators, &se, mat, rnd);
+                nw = apply_mutator_combination(mutators, &nw, mat, &mut self.rnd);
+                se = apply_mutator_combination(mutators, &se, mat, &mut self.rnd);
             }
         }
 
