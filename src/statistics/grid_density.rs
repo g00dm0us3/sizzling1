@@ -55,7 +55,7 @@ impl DensityEstimator2D {
                     1.0
                 } else {
                     // - TODO: this can be tinkered with, see that Montecarlo article.
-                    20.0 / ((self.samples.len() as f32 * pilot_est).sqrt())
+                    10.0 / ((self.samples.len() as f32 * pilot_est).sqrt())
                 }
             });
             pilot = curr

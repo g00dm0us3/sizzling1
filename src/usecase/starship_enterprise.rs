@@ -1,11 +1,10 @@
-use std::cmp::Ordering;
 use std::collections::HashSet;
-use std::ops::Deref;
 use std::time::Instant;
 use crate::alg::big_range_random_cursor::BigRangeRandomCursor;
 use crate::alg::combinations::Combinations;
 use crate::chaos_game::ChaosGame;
-use crate::ff_repository::affine_transform::{AffineMat, AffineTransform};
+use crate::ds::aff_ifs::ChaosGamePreprocess;
+use crate::ds::ifs_transform::IfsTransform;
 use crate::ff_repository::presets_repository::PresetsRepository;
 use crate::mutators::Mutators;
 use crate::ff_repository::mutator_description_service::{MutatorDescription, MutatorDescriptionService};
@@ -64,7 +63,7 @@ impl<'a> StarshipEnterprise<'a> {
                     .map(|e| (e - 1) as usize)
                     .collect();
 
-                let mut ifs: Vec<AffineTransform> = self.presets_repository
+                let mut ifs: Vec<IfsTransform> = self.presets_repository
                     .flatted
                     .iter()
                     .enumerate()
@@ -78,9 +77,7 @@ impl<'a> StarshipEnterprise<'a> {
                     .flatten()
                     .collect();
 
-                Self::sort_ifs(&mut ifs);
-                Self::set_cumulative_probs(&mut ifs);
-
+                ifs.prepare_for_chaos_game(true);
 
                 if self.chaos_game.run_convergence_test(&ifs, None) {
 
@@ -112,42 +109,6 @@ impl<'a> StarshipEnterprise<'a> {
 
                 continue
             }
-        }
-    }
-
-    fn sort_ifs(ifs: &mut Vec<AffineTransform>) {
-        // - TODO: welp this pretty much erodes our need for dependency on ndarray
-        fn det(mat: &AffineMat) -> f32 {
-            mat[[0,0]]*mat[[1,1]] - mat[[0,1]]*mat[[1,0]]
-        }
-
-        let total_det: f32 = ifs
-            .iter()
-            .map(|e| { return det(&e.mat).abs() })
-            .sum();
-
-        ifs.iter_mut().for_each(|t| {
-            t.p = det(&t.mat).abs()/total_det;
-        });
-        ifs.sort_by(|rhs, lhs| {
-            return if rhs.p > lhs.p {
-                Ordering::Greater
-            } else {
-                Ordering::Less
-            };
-        });
-    }
-
-    fn set_cumulative_probs(ifs: &mut Vec<AffineTransform>) {
-        let mut cum_prob = 0.0;
-
-        // - TODO: is there an idiom for this??
-        let last_idx = ifs.len() - 1;
-        for (idx, transform) in ifs.iter_mut().enumerate() {
-            cum_prob += transform.p;
-            transform.p = cum_prob;
-
-            if idx == last_idx { transform.p = 1.0; }
         }
     }
 }

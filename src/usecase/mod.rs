@@ -1,2 +1,3 @@
 pub mod starship_enterprise;
-mod hd_render;
+pub mod hd_render;
+

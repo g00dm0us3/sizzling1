@@ -1,7 +1,6 @@
-use crate::util::Point;
 use std::ops::Deref;
+use crate::ds::point::Point;
 use crate::modnar::Modnar;
-
 
 impl Point {
     fn r_f(&self) -> f32 {

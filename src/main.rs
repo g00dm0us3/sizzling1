@@ -20,11 +20,12 @@ use crate::frac_render::RgbRenderer;
 use crate::mutators::{MutatorConfig, Mutators};
 use std::env;
 use std::process::exit;
+use crate::alg::combinations::Combinations;
 use crate::ff_repository::mutator_description_service::{MutatorDescriptionService};
+use crate::usecase::hd_render::{HDRender, RenderIter};
 use crate::usecase::starship_enterprise::StarshipEnterprise;
 
 // grids, which are too small don't yield detailed results (all samples endup in the same bins)
-// - TODO: supersampling should probably be a thing.
 fn main() {
     let args: Vec<String> = env::args().collect();
 
@@ -34,16 +35,21 @@ fn main() {
         exit(-2);
     }
     let ifs_presets_json_path = &args[1];
-    // - TODO: erase before commit.
     let presets = PresetsRepository::load(ifs_presets_json_path)
         .expect("IFS presets not found!");
 
     let mut_desc_json_path = &args[2];
     let mut_desc = MutatorDescriptionService::load(mut_desc_json_path)
         .expect("Mutator descriptions not found!");
+//8, 14, 32, 36 -> 97074
 
-    let mut starship = StarshipEnterprise::new(&presets, &mut_desc);
+    //let mut combinations = Combinations::new();
+    //let rank = combinations.rank(&vec![8,14,32,36], 48, 4);
+    //println!("{rank}");
+    //HDRender::render(4, 144708, None, &presets, None, RenderIter::Large, false, 1024, 1024);
+    /*let mut starship = StarshipEnterprise::new(&presets, &mut_desc);
     starship.roll_dice_presets("", 500);
+    */
     /*let ifs = presets.find_ifs_by(IFS_NAME).expect(&format!("Couldn't find {IFS_NAME}"));
     let mut chaos_game = ChaosGame::new();
 

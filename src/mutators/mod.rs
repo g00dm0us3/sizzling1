@@ -1,8 +1,8 @@
 mod mutator_lib;
 
 use std::ops::RangeInclusive;
-use crate::util::Point;
-use crate::ff_repository::affine_transform::AffineMat;
+use crate::ds::affine_mat::AffineMat;
+use crate::ds::point::Point;
 use crate::modnar::Modnar;
 use crate::mutators::mutator_lib::{bent, blob, cosine, diamond, disc, ex, exponential, fan, fisheye, handkerchief, heart, horseshoe, hyperbolic, julia, polar, popcorn, power, rings, sinus, spherical, spiral, swirl, waves, pdj, fan2, rings2, eyefish, bubble, cylinder, perspective, noise, julian, julias, blur, gaussian, radian_blur, pie, ngon, curl, rectangles, arch, tangent, square, rays, blade, secant, twintrian, cross};
 
@@ -114,14 +114,14 @@ fn call(
         Mutators::Julia => julia(p, rnd),
         Mutators::Bent => bent(p),
         // - TODO: mutators, dependent on transform applied. has something to it.
-        Mutators::Waves => waves(p, mat.b(), mat.c(), mat.e(), mat.f()),
+        Mutators::Waves => waves(p, mat.b, mat.c, mat.e, mat.f),
         Mutators::Fisheye => fisheye(p),
-        Mutators::Popcorn => popcorn(p, mat.c(), mat.f()),
+        Mutators::Popcorn => popcorn(p, mat.c, mat.f),
         Mutators::Exponential => exponential(p),
         Mutators::Power => power(p),
         Mutators::Cosine => cosine(p),
-        Mutators::Rings => rings(p, mat.c()),
-        Mutators::Fan => fan(p, mat.c(), mat.f()),
+        Mutators::Rings => rings(p, mat.c),
+        Mutators::Fan => fan(p, mat.c, mat.f),
         Mutators::Blob { blob_h, blob_l, blob_waves } => blob(p, blob_h, blob_l, blob_waves),
         Mutators::Pdj { pdj_a, pdj_b, pdj_c, pdj_d } => pdj(p, pdj_a, pdj_b, pdj_c, pdj_d),
         Mutators::Fan2 { fx, fy } => fan2(p, fx, fy),

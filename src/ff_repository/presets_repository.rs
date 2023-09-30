@@ -1,11 +1,11 @@
-use std::cmp::Ordering;
-use crate::ff_repository::affine_transform::{AffineIfs, AffineTransform};
+use crate::ds::aff_ifs::AffIfs;
+use crate::ds::ifs_transform::IfsTransform;
 use crate::ff_repository::json_helper::JsonHelper;
 use crate::ff_repository::repository_error::RepositoryError;
 
 pub(crate) struct PresetsRepository {
-    pub(crate) affine_presets: Vec<AffineIfs>,
-    pub(crate) flatted: Vec<AffineTransform>
+    pub(crate) affine_presets: Vec<AffIfs>,
+    pub(crate) flatted: Vec<IfsTransform>
 }
 
 impl PresetsRepository {
@@ -13,11 +13,11 @@ impl PresetsRepository {
         // - TODO: how to forward error btw maps?
         match JsonHelper::read_db(db_path) {
             Ok(json) => {
-                JsonHelper::parse_data::<Vec<AffineIfs>>(&json)
+                JsonHelper::parse_data::<Vec<AffIfs>>(&json)
                     .map(|parse_result| {
                         let mut self_ = Self {
                             affine_presets: parse_result,
-                            flatted: Vec::<AffineTransform>::new()
+                            flatted: Vec::<IfsTransform>::new()
                         };
                         self_.post_process();
                         self_
@@ -27,14 +27,13 @@ impl PresetsRepository {
         }
     }
 
-    pub(crate) fn find_ifs_by(&self, name: &str) -> Option<&AffineIfs> {
+    pub(crate) fn find_ifs_by(&self, name: &str) -> Option<&AffIfs> {
         self.affine_presets.iter().find(|ifs| ifs.name == name)
     }
 
     fn post_process(&mut self) {
         for affine_ifs in &mut self.affine_presets {
-            AffineIfsPreprocessor::sort_ifs(affine_ifs);
-            AffineIfsPreprocessor::set_cumulative_probs(affine_ifs);
+            affine_ifs.prepare_preset_for_chaos_game();
 
             // - WARNING: it's important that we add those to the flatted array only after transforms in the ifs
             // are sorted. Need to introduce some sort of lock on this order.
@@ -43,36 +42,9 @@ impl PresetsRepository {
     }
 }
 
-// service that reads json knows awfully a lot about what it reads
-struct AffineIfsPreprocessor;
-impl AffineIfsPreprocessor {
-    fn sort_ifs(ifs: &mut AffineIfs) {
-        ifs.transforms.sort_by(|rhs, lhs| {
-            return if rhs.p > lhs.p {
-                Ordering::Greater
-            } else {
-                Ordering::Less
-            };
-        });
-    }
-
-    fn set_cumulative_probs(ifs: &mut AffineIfs) {
-        let mut cum_prob = 0.0;
-
-        // - TODO: is there an idiom for this??
-        let last_idx = ifs.transforms.len() - 1;
-        for (idx, transform) in ifs.transforms.iter_mut().enumerate() {
-            cum_prob += transform.p;
-            transform.p = cum_prob;
-
-            if idx == last_idx { transform.p = 1.0; }
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::ff_repository::affine_transform::AffineIfs;
+    use crate::ds::aff_ifs::AffIfs;
 
     #[test]
     fn test_json_parse() {
@@ -97,7 +69,7 @@ mod tests {
         ]
         "#;
 
-        type ParseResult = serde_json::Result<Vec<AffineIfs>>;
+        type ParseResult = serde_json::Result<Vec<AffIfs>>;
         let ifs = match serde_json::from_str(&json) as ParseResult {
             Ok(vec_affine_ifs) => Ok(vec_affine_ifs),
             Err(error) => Err(error),

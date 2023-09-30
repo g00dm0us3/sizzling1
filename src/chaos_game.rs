@@ -1,8 +1,8 @@
-use std::ops::Deref;
-use crate::ff_repository::affine_transform::{AffineIfs, AffineTransform};
+use crate::ds::aff_ifs::AffIfs;
+use crate::ds::ifs_transform::IfsTransform;
+use crate::ds::point::Point;
 use crate::modnar::Modnar;
 use crate::mutators::{apply_mutator_combination, MutatorConfig};
-use crate::util::Point;
 
 pub(crate) struct ChaosGame {
     rnd: Modnar,
@@ -10,18 +10,18 @@ pub(crate) struct ChaosGame {
 }
 
 pub(crate) trait AffineTransformProvider {
-    fn find_transform(&self, prob: f32) -> Option<&AffineTransform>;
+    fn find_transform(&self, prob: f32) -> Option<&IfsTransform>;
 }
 
-impl AffineTransformProvider for Vec<AffineTransform> {
-    fn find_transform(&self, prob: f32) -> Option<&AffineTransform> {
+impl AffineTransformProvider for Vec<IfsTransform> {
+    fn find_transform(&self, prob: f32) -> Option<&IfsTransform> {
         self.iter()
             .find(|t| prob <= t.p)
     }
 }
 
-impl AffineTransformProvider for &AffineIfs {
-    fn find_transform(&self, prob: f32) -> Option<&AffineTransform> {
+impl AffineTransformProvider for &AffIfs {
+    fn find_transform(&self, prob: f32) -> Option<&IfsTransform> {
         self.transforms
             .iter()
             .find(|t| prob <= t.p)
@@ -67,7 +67,7 @@ impl ChaosGame {
                 .expect("Didn't find transform!");
 
             let mat = &transform.mat;
-            point.mul(mat.deref());
+            point.transform(mat);
 
             if let Some(mutators) = mutators {
                 point = apply_mutator_combination(mutators, &point, mat, &mut self.rnd);
@@ -100,8 +100,8 @@ impl ChaosGame {
                 .expect("Didn't find transform!");
 
             let mat = &transform.mat;
-            nw.mul(mat.deref());
-            se.mul(mat.deref());
+            nw.transform(mat);
+            se.transform(mat);
 
             if let Some(mutators) = mutators {
                 nw = apply_mutator_combination(mutators, &nw, mat, &mut self.rnd);
